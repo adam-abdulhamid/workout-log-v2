@@ -2,10 +2,12 @@ import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Home, Settings } from "lucide-react";
+import { Calendar, Dumbbell, Blocks, CalendarDays, Settings } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Manage Days", href: "/admin/days", icon: CalendarDays },
+  { name: "Block Library", href: "/admin/blocks", icon: Blocks },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -23,10 +25,11 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-muted/30">
+      <aside className="w-64 border-r bg-muted/30 flex flex-col">
         <div className="flex h-14 items-center border-b px-4">
-          <Link href="/dashboard" className="font-semibold">
-            App Starter
+          <Link href="/calendar" className="flex items-center gap-2 font-semibold text-primary">
+            <Dumbbell className="h-5 w-5" />
+            Workout Log
           </Link>
         </div>
         <nav className="flex-1 space-y-1 p-4">
