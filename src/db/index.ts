@@ -2,11 +2,21 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set");
-}
+const databaseUrl = process.env.DATABASE_URL;
 
-const sql = neon(process.env.DATABASE_URL);
-export const db = drizzle(sql, { schema });
+type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
+
+// During build time, DATABASE_URL may not be available. We use a proxy that
+// throws only when the db is actually accessed, allowing the build to complete.
+export const db: DrizzleDB = databaseUrl
+  ? drizzle(neon(databaseUrl), { schema })
+  : (new Proxy(
+      {},
+      {
+        get() {
+          throw new Error("DATABASE_URL environment variable is not set");
+        },
+      },
+    ) as DrizzleDB);
 
 export type Database = typeof db;

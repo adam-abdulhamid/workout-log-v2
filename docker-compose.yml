@@ -1,3 +1,13 @@
+# Docker Compose for production deployment with Traefik reverse proxy
+# Before deploying, replace:
+#   - YOUR_APP_NAME: unique name for this app (e.g., "myapp")
+#   - your.domain.com: your actual domain
+#
+# Prerequisites on VPS:
+#   1. Traefik running with traefik-public network (see CLAUDE.md for setup)
+#   2. .env file with all required environment variables
+#   3. DNS pointing to your VPS
+
 services:
   app:
     build:
@@ -6,12 +16,25 @@ services:
         - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
         - NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
         - NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET}
       - RESEND_API_KEY=${RESEND_API_KEY}
     env_file:
-      - .env.local
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.YOUR_APP_NAME.rule=Host(`your.domain.com`)"
+      - "traefik.http.routers.YOUR_APP_NAME.entrypoints=websecure"
+      - "traefik.http.routers.YOUR_APP_NAME.tls.certresolver=letsencrypt"
+      - "traefik.http.services.YOUR_APP_NAME.loadbalancer.server.port=3000"
+    networks:
+      - traefik-public
+    restart: unless-stopped
+
+networks:
+  traefik-public:
+    external: true

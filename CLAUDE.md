@@ -69,3 +69,83 @@ Required variables are documented in `.env.example`. Copy to `.env.local` for lo
 - Prefer server components where possible
 - Use `cn()` utility for conditional class names
 - Follow existing patterns in the codebase
+
+## Deployment (VPS with Traefik)
+
+### One-time Traefik Setup
+
+On your VPS, create `~/traefik/docker-compose.yml`:
+```yaml
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./acme.json:/acme.json
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    name: traefik-public
+```
+
+Create `~/traefik/traefik.yml`:
+```yaml
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik-public
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: your-email@example.com
+      storage: /acme.json
+      httpChallenge:
+        entryPoint: web
+```
+
+Create empty acme.json with correct permissions:
+```bash
+touch ~/traefik/acme.json && chmod 600 ~/traefik/acme.json
+```
+
+Start Traefik:
+```bash
+cd ~/traefik && docker compose up -d
+```
+
+### Deploying an App
+
+1. Update `docker-compose.yml`: replace `YOUR_APP_NAME` and `your.domain.com`
+2. Create `.env` on VPS with production environment variables
+3. Clone/copy repo to VPS (e.g., `~/apps/your-app`)
+4. Build and run:
+```bash
+cd ~/apps/your-app && docker compose up -d --build
+```
+
+### Verification
+```bash
+docker ps                                    # Check containers running
+docker logs <container-name>                 # Check app logs
+docker network inspect traefik-public        # Verify network connectivity
+```
