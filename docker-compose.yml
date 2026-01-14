@@ -6,8 +6,8 @@ services:
         - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
         - NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
         - NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
@@ -15,3 +15,16 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
     env_file:
       - .env.local
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workout.rule=Host(`workout.adamabdulhamid.com`)"
+      - "traefik.http.routers.workout.entrypoints=websecure"
+      - "traefik.http.routers.workout.tls.certresolver=letsencrypt"
+      - "traefik.http.services.workout.loadbalancer.server.port=3000"
+    networks:
+      - traefik-public
+    restart: unless-stopped
+
+networks:
+  traefik-public:
+    external: true
