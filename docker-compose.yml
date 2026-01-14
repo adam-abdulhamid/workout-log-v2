@@ -14,7 +14,7 @@ services:
       - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET}
       - RESEND_API_KEY=${RESEND_API_KEY}
     env_file:
-      - .env.local
+      - .env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.workout.rule=Host(`workout.adamabdulhamid.com`)"
