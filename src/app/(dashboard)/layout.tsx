@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Dumbbell, Blocks, CalendarDays, Settings } from "lucide-react";
+import { MobileNav } from "@/components/layout/mobile-nav";
 
 const navigation = [
   { name: "Calendar", href: "/calendar", icon: Calendar },
@@ -23,9 +24,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 border-r bg-muted/30 flex flex-col">
+    <div className="flex min-h-screen min-h-dvh">
+      {/* Sidebar - hidden on mobile */}
+      <aside className="hidden md:flex w-64 border-r bg-muted/30 flex-col fixed inset-y-0 left-0 z-30">
         <div className="flex h-14 items-center border-b px-4">
           <Link href="/calendar" className="flex items-center gap-2 font-semibold text-primary">
             <Dumbbell className="h-5 w-5" />
@@ -46,16 +47,20 @@ export default async function DashboardLayout({
         </nav>
       </aside>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
+      {/* Main content - offset for sidebar on desktop */}
+      <div className="flex flex-1 flex-col md:ml-64">
         {/* Header */}
-        <header className="flex h-14 items-center justify-between border-b px-6">
-          <div />
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background px-4 md:px-6">
+          <MobileNav />
+          <Link href="/calendar" className="flex items-center gap-2 font-semibold text-primary md:hidden">
+            <Dumbbell className="h-5 w-5" />
+            Workout Log
+          </Link>
           <UserButton afterSignOutUrl="/" />
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

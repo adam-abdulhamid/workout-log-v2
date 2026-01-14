@@ -126,21 +126,33 @@ export function CalendarView() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={navigatePrevious}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={navigateNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
-          </Button>
+      {/* Header - stacks on mobile */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between sm:justify-start gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={navigatePrevious}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={navigateNext}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={goToToday}>
+              Today
+            </Button>
+          </div>
+          <Tabs
+            value={viewMode}
+            onValueChange={(v) => setViewMode(v as ViewMode)}
+            className="sm:hidden"
+          >
+            <TabsList className="h-8">
+              <TabsTrigger value="week" className="text-xs px-2">Week</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs px-2">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-base sm:text-xl font-semibold text-center sm:text-left order-first sm:order-none">
           {viewMode === "week"
             ? formatWeekRange()
             : `${MONTH_NAMES[month - 1]} ${year}`}
@@ -149,6 +161,7 @@ export function CalendarView() {
         <Tabs
           value={viewMode}
           onValueChange={(v) => setViewMode(v as ViewMode)}
+          className="hidden sm:block"
         >
           <TabsList>
             <TabsTrigger value="week">Week</TabsTrigger>
