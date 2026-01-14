@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+.next
+out
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (should be provided at runtime)
+.env
+.env.*
+!.env.example
+
+# Testing
+coverage
+tests
+
+# Documentation
+*.md
+!README.md
+
+# Misc
+.claude
