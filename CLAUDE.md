@@ -14,6 +14,7 @@ This is a Next.js starter kit template for building login-based web applications
 - **Auth:** Clerk
 - **Styling:** Tailwind CSS v4 + shadcn/ui
 - **Email:** Resend
+- **Analytics:** PostHog (optional)
 - **Testing:** Vitest
 - **Deployment:** Docker on VPS
 
@@ -38,6 +39,7 @@ pnpm db:studio    # Open Drizzle Studio
 - `src/app/(dashboard)/` - Protected dashboard pages
 - `src/app/api/webhooks/clerk/` - Clerk webhook for user sync
 - `src/components/ui/` - shadcn/ui components
+- `src/components/providers/` - React context providers (PostHog, etc.)
 - `src/db/` - Database schema and connection (Drizzle)
 - `src/lib/` - Utility functions and email helpers
 - `src/middleware.ts` - Clerk auth middleware
@@ -54,6 +56,13 @@ pnpm db:studio    # Open Drizzle Studio
 - Schema defined in `src/db/schema.ts`
 - Use `db` from `src/db/index.ts` for queries
 - Drizzle ORM with Neon serverless driver
+
+### Analytics
+- PostHog is integrated for product analytics (optional - disabled if env vars not set)
+- Provider configured in `src/components/providers/posthog-provider.tsx`
+- Automatic page view tracking for SPA navigation
+- Free tier: 1M events/month at [posthog.com](https://posthog.com)
+- To enable: add `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` to your environment
 
 ### Adding shadcn/ui Components
 ```bash
