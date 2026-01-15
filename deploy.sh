@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "Fetching latest changes..."
+git fetch origin main
+
 echo "Pulling latest changes..."
 git pull
 
