@@ -1,3 +1,13 @@
+# Docker Compose for production deployment with Traefik reverse proxy
+# Before deploying, replace:
+#   - YOUR_APP_NAME: unique name for this app (e.g., "myapp")
+#   - your.domain.com: your actual domain
+#
+# Prerequisites on VPS:
+#   1. Traefik running with traefik-public network (see CLAUDE.md for setup)
+#   2. .env file with all required environment variables
+#   3. DNS pointing to your VPS
+
 services:
   app:
     build:
