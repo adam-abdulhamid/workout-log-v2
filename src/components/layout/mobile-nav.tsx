@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Calendar, Blocks, CalendarDays, Settings, Dumbbell } from "lucide-react";
@@ -18,6 +18,15 @@ export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+      return () => document.body.classList.remove("overflow-hidden");
+    }
+    document.body.classList.remove("overflow-hidden");
+  }, [isOpen]);
+
   return (
     <>
       <Button
@@ -33,7 +42,7 @@ export function MobileNav() {
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -41,7 +50,7 @@ export function MobileNav() {
       {/* Slide-out menu */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200 ease-in-out md:hidden",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border shadow-2xl transform transition-transform duration-200 ease-in-out md:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
