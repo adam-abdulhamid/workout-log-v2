@@ -24,6 +24,12 @@ export function DayCell({ day, onClick, isCompact = false }: DayCellProps) {
         isToday && "ring-2 ring-primary"
       )}
     >
+      {isCompact && (
+        <div className="absolute top-0.5 left-0.5 right-0.5 rounded border border-border/60 bg-background/70 px-0.5 py-0.5 text-[8px] sm:text-[10px] text-muted-foreground leading-none text-center line-clamp-1 min-h-[12px]">
+          {day.workoutName}
+        </div>
+      )}
+
       {/* Day number */}
       <span
         className={cn(
@@ -35,14 +41,11 @@ export function DayCell({ day, onClick, isCompact = false }: DayCellProps) {
       </span>
 
       {/* Workout name - hidden on very small screens in compact mode */}
-      <span
-        className={cn(
-          "text-xs text-muted-foreground text-center mt-1 line-clamp-2",
-          isCompact && "text-[8px] sm:text-[10px] hidden xs:block"
-        )}
-      >
-        {day.workoutName}
-      </span>
+      {!isCompact && (
+        <span className="text-xs text-muted-foreground text-center mt-1 line-clamp-2">
+          {day.workoutName}
+        </span>
+      )}
 
       {/* Indicators */}
       <div className="absolute bottom-0.5 sm:bottom-1 right-0.5 sm:right-1 flex gap-0.5 sm:gap-1">
