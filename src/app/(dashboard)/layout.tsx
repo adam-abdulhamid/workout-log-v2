@@ -2,13 +2,14 @@ import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Dumbbell, Blocks, CalendarDays, Settings } from "lucide-react";
+import { Calendar, Dumbbell, Blocks, CalendarDays, Settings, LineChart } from "lucide-react";
 import { MobileNav } from "@/components/layout/mobile-nav";
 
 const navigation = [
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Manage Days", href: "/admin/days", icon: CalendarDays },
   { name: "Block Library", href: "/admin/blocks", icon: Blocks },
+  { name: "Weight Tracker", href: "/dashboard/weight-tracker", icon: LineChart },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

@@ -28,6 +28,7 @@ export const users = pgTable("users", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   workoutLogs: many(workoutLogs),
+  weightEntries: many(weightEntries),
 }));
 
 // ============================================================================
@@ -185,6 +186,27 @@ export const workoutLogsRelations = relations(workoutLogs, ({ one, many }) => ({
   }),
   exerciseLogs: many(exerciseLogs),
   blockNoteLogs: many(blockNoteLogs),
+}));
+
+// ============================================================================
+// WEIGHT ENTRIES
+// ============================================================================
+
+export const weightEntries = pgTable("weight_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: timestamp("date").notNull(),
+  weightLb: real("weight_lb").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const weightEntriesRelations = relations(weightEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [weightEntries.userId],
+    references: [users.id],
+  }),
 }));
 
 // ============================================================================
