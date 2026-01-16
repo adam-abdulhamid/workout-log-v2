@@ -33,13 +33,12 @@ export function MonthView({ days, year, month, onDayClick }: MonthViewProps) {
   }
 
   return (
-    <div className="space-y-2">
-      {/* Day headers - short on mobile */}
-      <div className="grid grid-cols-7 gap-1">
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-7 gap-0.5 md:gap-2">
         {DAY_NAMES.map((day, index) => (
           <div
             key={day}
-            className="text-center text-xs sm:text-sm font-medium text-muted-foreground py-1 sm:py-2"
+            className="text-center text-[10px] font-medium text-muted-foreground py-2 tracking-wider uppercase"
           >
             <span className="hidden sm:inline">{day}</span>
             <span className="sm:hidden">{DAY_NAMES_SHORT[index]}</span>
@@ -47,31 +46,22 @@ export function MonthView({ days, year, month, onDayClick }: MonthViewProps) {
         ))}
       </div>
 
-      {/* Day cells */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 md:gap-2">
         {paddedDays.map((day, index) =>
           day ? (
-            <DayCell key={day.date} day={day} onClick={onDayClick} isCompact />
+            <DayCell
+              key={day.date}
+              day={day}
+              onClick={onDayClick}
+              showWeekday={false}
+            />
           ) : (
-            <div key={`empty-${index}`} className="min-h-[60px] sm:min-h-[80px]" />
+            <div
+              key={`empty-${index}`}
+              className="aspect-square border border-border/30 bg-background"
+            />
           )
         )}
-      </div>
-
-      {/* Legend - wrap on mobile */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span>Completed</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-yellow-500" />
-          <span>Deload</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 sm:w-4 sm:h-4 rounded ring-2 ring-primary" />
-          <span>Today</span>
-        </div>
       </div>
     </div>
   );

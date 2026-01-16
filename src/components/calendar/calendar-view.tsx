@@ -125,47 +125,60 @@ export function CalendarView() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header - stacks on mobile */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center justify-between sm:justify-start gap-2">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={navigatePrevious}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={navigateNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={goToToday}>
-              Today
-            </Button>
-          </div>
-          <Tabs
-            value={viewMode}
-            onValueChange={(v) => setViewMode(v as ViewMode)}
-            className="sm:hidden"
+    <div className="flex flex-col gap-8">
+      <h1 className="text-xl font-semibold tracking-wider uppercase">
+        Workout Calendar
+      </h1>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={navigatePrevious}
+            className="w-9 h-9 border-border bg-transparent"
           >
-            <TabsList className="h-8">
-              <TabsTrigger value="week" className="text-xs px-2">Week</TabsTrigger>
-              <TabsTrigger value="month" className="text-xs px-2">Month</TabsTrigger>
-            </TabsList>
-          </Tabs>
+            <ChevronLeft className="w-4 h-4" />
+            <span className="sr-only">Previous {viewMode}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={navigateNext}
+            className="w-9 h-9 border-border bg-transparent"
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span className="sr-only">Next {viewMode}</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={goToToday}
+            className="px-4 border-border text-xs tracking-wider uppercase bg-transparent"
+          >
+            Today
+          </Button>
         </div>
 
-        <h2 className="text-base sm:text-xl font-semibold text-center sm:text-left order-first sm:order-none">
+        <h2 className="text-base font-medium text-muted-foreground text-center sm:text-left order-first sm:order-none tracking-wide">
           {viewMode === "week"
             ? formatWeekRange()
             : `${MONTH_NAMES[month - 1]} ${year}`}
         </h2>
 
-        <Tabs
-          value={viewMode}
-          onValueChange={(v) => setViewMode(v as ViewMode)}
-          className="hidden sm:block"
-        >
-          <TabsList>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="month">Month</TabsTrigger>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+          <TabsList className="bg-transparent border border-border p-0.5">
+            <TabsTrigger
+              value="week"
+              className="data-[state=active]:bg-card text-xs tracking-wider uppercase px-4"
+            >
+              Week
+            </TabsTrigger>
+            <TabsTrigger
+              value="month"
+              className="data-[state=active]:bg-card text-xs tracking-wider uppercase px-4"
+            >
+              Month
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -173,7 +186,9 @@ export function CalendarView() {
       {/* Calendar Content */}
       {loading ? (
         <div className="flex items-center justify-center h-[400px]">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
+          <div className="animate-pulse text-muted-foreground text-xs tracking-wider uppercase">
+            Loading...
+          </div>
         </div>
       ) : viewMode === "week" ? (
         <WeekView days={days} onDayClick={handleDayClick} />
@@ -185,6 +200,21 @@ export function CalendarView() {
           onDayClick={handleDayClick}
         />
       )}
+
+      <div className="flex items-center justify-center gap-8 text-xs text-muted-foreground tracking-wider uppercase">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <span>Completed</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 border border-accent" />
+          <span>Deload</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border border-primary" />
+          <span>Today</span>
+        </div>
+      </div>
     </div>
   );
 }

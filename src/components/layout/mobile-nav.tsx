@@ -21,9 +21,9 @@ export function MobileNav() {
   return (
     <>
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="md:hidden"
+        className="bg-background border-border md:hidden"
         onClick={() => setIsOpen(true)}
         aria-label="Open menu"
       >
@@ -41,21 +41,23 @@ export function MobileNav() {
       {/* Slide-out menu */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out md:hidden",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200 ease-in-out md:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-14 items-center justify-between border-b px-4">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
+          <div className="flex items-center justify-center w-7 h-7 bg-primary">
+            <Dumbbell className="h-4 w-4 text-background" />
+          </div>
           <Link
             href="/calendar"
-            className="flex items-center gap-2 font-semibold text-primary"
+            className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-primary"
             onClick={() => setIsOpen(false)}
           >
-            <Dumbbell className="h-5 w-5" />
             Workout Log
           </Link>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={() => setIsOpen(false)}
             aria-label="Close menu"
@@ -70,10 +72,10 @@ export function MobileNav() {
               href={item.href}
               onClick={() => setIsOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 text-xs font-medium tracking-wider uppercase transition-colors border border-transparent",
                 pathname === item.href || pathname.startsWith(item.href + "/")
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-border bg-card text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:border-border/50"
               )}
             >
               <item.icon className="h-4 w-4" />

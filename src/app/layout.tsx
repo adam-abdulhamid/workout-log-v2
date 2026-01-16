@@ -1,22 +1,26 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-ibm-plex-mono",
 });
 
 export const metadata: Metadata = {
   title: "Workout Log",
   description: "Track your workouts with a 7-week training cycle",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#141416",
 };
 
 export default function RootLayout({
@@ -26,9 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
+      <html lang="en" className="dark bg-background">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${ibmPlexMono.variable} font-mono antialiased overflow-x-hidden grid-pattern`}
         >
           <PostHogProvider>{children}</PostHogProvider>
         </body>
