@@ -130,14 +130,7 @@ src/
 
 The following features and improvements are planned for future development:
 
-### 1. Faster Deployment Pipeline
-The current VPS deployment takes ~20 minutes regardless of change size. Improvements to explore:
-- Docker layer caching optimization
-- Pre-built base images with dependencies
-- Incremental builds / only rebuild changed layers
-- Consider CI/CD with image registry (push pre-built images instead of building on VPS)
-
-### 2. Health Document Uploads (DEXA / VO2 Max)
+### 1. Health Document Uploads (DEXA / VO2 Max)
 Add a section for uploading and viewing PDF documents of health assessments:
 - DEXA scan results
 - VO2 max test results
@@ -145,7 +138,7 @@ Add a section for uploading and viewing PDF documents of health assessments:
 - PDF rendered inline on the site for easy viewing
 - No charts or data extraction needed initially
 
-### 3. Injury Log / Journal
+### 2. Injury Log / Journal
 A journal-style logging system for tracking injuries:
 - Natural language entries for tracking current injuries
 - Chronological view of past entries
