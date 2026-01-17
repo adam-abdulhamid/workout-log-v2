@@ -29,6 +29,7 @@ export const users = pgTable("users", {
 export const usersRelations = relations(users, ({ many }) => ({
   workoutLogs: many(workoutLogs),
   weightEntries: many(weightEntries),
+  injuryEntries: many(injuryEntries),
 }));
 
 // ============================================================================
@@ -210,6 +211,27 @@ export const weightEntriesRelations = relations(weightEntries, ({ one }) => ({
 }));
 
 // ============================================================================
+// INJURY ENTRIES
+// ============================================================================
+
+export const injuryEntries = pgTable("injury_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const injuryEntriesRelations = relations(injuryEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [injuryEntries.userId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
 // EXERCISE LOGS (Individual set performance)
 // ============================================================================
 
@@ -326,3 +348,6 @@ export type NewBlockNoteLog = typeof blockNoteLogs.$inferInsert;
 
 export type ExerciseSnapshot = typeof exerciseSnapshots.$inferSelect;
 export type NewExerciseSnapshot = typeof exerciseSnapshots.$inferInsert;
+
+export type InjuryEntry = typeof injuryEntries.$inferSelect;
+export type NewInjuryEntry = typeof injuryEntries.$inferInsert;

@@ -138,13 +138,11 @@ Add a section for uploading and viewing PDF documents of health assessments:
 - PDF rendered inline on the site for easy viewing
 - No charts or data extraction needed initially
 
-### 2. Injury Log / Journal
-A journal-style logging system for tracking injuries:
-- Natural language entries for tracking current injuries
-- Chronological view of past entries
-- Future enhancements:
-  - AI-powered summaries of injury progression
-  - Ability to upload supporting documents (MRIs, X-rays, etc.)
+### 2. Injury Log Enhancements
+The basic injury log (free-form entries with chronological view) is implemented. Future enhancements:
+- AI-powered summaries of injury progression
+- Ability to upload supporting documents (MRIs, X-rays, radiology reports)
+- Search/filter entries
 
 ## License
 

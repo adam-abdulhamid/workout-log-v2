@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Calendar, Blocks, CalendarDays, Settings, Dumbbell, LineChart } from "lucide-react";
+import { Menu, X, Calendar, Blocks, CalendarDays, Settings, Dumbbell, LineChart, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ const navigation = [
   { name: "Manage Days", href: "/admin/days", icon: CalendarDays },
   { name: "Block Library", href: "/admin/blocks", icon: Blocks },
   { name: "Weight Tracker", href: "/dashboard/weight-tracker", icon: LineChart },
+  { name: "Injury Log", href: "/dashboard/injury-log", icon: HeartPulse },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
