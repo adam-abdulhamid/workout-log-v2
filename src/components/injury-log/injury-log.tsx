@@ -227,8 +227,8 @@ export function InjuryLog() {
       </Card>
 
       <Dialog open={!!selectedEntry} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center justify-between">
               <span>
                 {selectedEntry && formatDate(selectedEntry.createdAt)}
@@ -255,15 +255,15 @@ export function InjuryLog() {
             </DialogTitle>
           </DialogHeader>
           {selectedEntry && (
-            <div className="space-y-4">
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               {isEditing ? (
-                <>
+                <div className="flex flex-col gap-4 flex-1 min-h-0">
                   <Textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    rows={6}
+                    className="flex-1 min-h-[150px] max-h-[50vh] resize-none"
                   />
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2 justify-end flex-shrink-0">
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -281,15 +281,17 @@ export function InjuryLog() {
                       {isSaving ? "Saving..." : "Save"}
                     </Button>
                   </div>
-                </>
-              ) : (
-                <div className="text-sm whitespace-pre-wrap">
-                  {selectedEntry.content}
                 </div>
-              )}
-              {selectedEntry.updatedAt !== selectedEntry.createdAt && (
-                <div className="text-xs text-muted-foreground">
-                  Edited {formatDate(selectedEntry.updatedAt)}
+              ) : (
+                <div className="overflow-y-auto flex-1 min-h-0">
+                  <div className="text-sm whitespace-pre-wrap pr-2">
+                    {selectedEntry.content}
+                  </div>
+                  {selectedEntry.updatedAt !== selectedEntry.createdAt && (
+                    <div className="text-xs text-muted-foreground mt-4">
+                      Edited {formatDate(selectedEntry.updatedAt)}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
