@@ -36,16 +36,16 @@ export function BlockCard({
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 {isOpen ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
                 <CardTitle className="text-lg">{block.name}</CardTitle>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pl-6 sm:pl-0">
                 {block.category && (
                   <Badge variant="secondary" className="text-xs">
                     {block.category}

@@ -126,6 +126,36 @@ src/
 └── middleware.ts           # Clerk auth middleware
 ```
 
+## Future Improvements
+
+The following features and improvements are planned for future development:
+
+### 1. Faster Deployment Pipeline
+The current VPS deployment takes ~20 minutes regardless of change size. Improvements to explore:
+- Docker layer caching optimization
+- Pre-built base images with dependencies
+- Incremental builds / only rebuild changed layers
+- Consider CI/CD with image registry (push pre-built images instead of building on VPS)
+
+### 2. Mobile Workout Block Header Layout
+When viewing a day on mobile, the workout block tags (e.g., "rehabilitation", "5 exercises") take up too much horizontal space. The title should be prominent with tags displayed as secondary information below.
+
+### 3. Health Document Uploads (DEXA / VO2 Max)
+Add a section for uploading and viewing PDF documents of health assessments:
+- DEXA scan results
+- VO2 max test results
+- Simple upload and view functionality
+- PDF rendered inline on the site for easy viewing
+- No charts or data extraction needed initially
+
+### 4. Injury Log / Journal
+A journal-style logging system for tracking injuries:
+- Natural language entries for tracking current injuries
+- Chronological view of past entries
+- Future enhancements:
+  - AI-powered summaries of injury progression
+  - Ability to upload supporting documents (MRIs, X-rays, etc.)
+
 ## License
 
 MIT

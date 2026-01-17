@@ -79,6 +79,15 @@ Required variables are documented in `.env.example`. Copy to `.env.local` for lo
 - Use `cn()` utility for conditional class names
 - Follow existing patterns in the codebase
 
+## Future Improvements
+
+When finishing a task or set of tasks, check the **Future Improvements** section in `README.md` and ask the user if any of those items should be implemented next. Current planned improvements include:
+
+1. **Faster Deployment Pipeline** - Optimize Docker builds and consider CI/CD with image registry
+2. **Mobile Workout Block Header Layout** - Make title prominent, tags secondary/below
+3. **Health Document Uploads** - PDF upload/view for DEXA scans, VO2 max tests
+4. **Injury Log / Journal** - Natural language injury tracking with chronological view
+
 ## Deployment (VPS with Traefik)
 
 ### One-time Traefik Setup
