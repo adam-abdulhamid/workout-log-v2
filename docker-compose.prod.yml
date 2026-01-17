@@ -1,0 +1,23 @@
+# Production Docker Compose - pulls pre-built image from GHCR
+# Used by GitHub Actions CI/CD pipeline
+
+services:
+  app:
+    image: ghcr.io/adam-abdulhamid/workout-log-v2:latest
+    expose:
+      - "3000"
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workout.rule=Host(`workout.adamabdulhamid.com`)"
+      - "traefik.http.routers.workout.entrypoints=websecure"
+      - "traefik.http.routers.workout.tls.certresolver=letsencrypt"
+      - "traefik.http.services.workout.loadbalancer.server.port=3000"
+    networks:
+      - traefik-public
+    restart: unless-stopped
+
+networks:
+  traefik-public:
+    external: true
