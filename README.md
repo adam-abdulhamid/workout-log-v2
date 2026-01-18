@@ -81,8 +81,46 @@ Open [http://localhost:3000](http://localhost:3000) to see your app.
 | `pnpm test:run` | Run tests once |
 | `pnpm db:generate` | Generate database migrations |
 | `pnpm db:migrate` | Run database migrations |
-| `pnpm db:push` | Push schema changes directly |
-| `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm db:push` | Push schema changes directly (dev) |
+| `pnpm db:studio` | Open Drizzle Studio GUI |
+
+## Database Management
+
+This project uses [Drizzle ORM](https://orm.drizzle.team/) with Neon PostgreSQL.
+
+### Drizzle Studio
+
+Open a visual database browser to view and edit data:
+
+```bash
+pnpm db:studio
+```
+
+This opens a web GUI where you can:
+- Browse all tables and their data
+- Edit individual records (e.g., set `is_feedback_user = true` for a user)
+- Run queries and see results
+- View table schemas and relationships
+
+### Schema Changes Workflow
+
+**During development** (schema is evolving):
+```bash
+pnpm db:push
+```
+Pushes schema changes directly to the database. Fast iteration, no migration files.
+
+**For production** (track changes with migrations):
+```bash
+pnpm db:generate  # Generate migration from schema changes
+pnpm db:migrate   # Apply migrations to database
+```
+
+### Schema Location
+
+Database schema is defined in `src/db/schema.ts`. After modifying the schema:
+1. Run `pnpm db:push` (dev) or `pnpm db:generate` + `pnpm db:migrate` (prod)
+2. TypeScript types are automatically inferred from the schema
 
 ## Docker
 
@@ -143,6 +181,13 @@ The basic injury log (free-form entries with chronological view) is implemented.
 - AI-powered summaries of injury progression
 - Ability to upload supporting documents (MRIs, X-rays, radiology reports)
 - Search/filter entries
+
+### 3. User-Scoped Blocks and Day Templates
+Currently, blocks and day templates are global (shared across all users). These should be made user-scoped:
+- Add `userId` to `blocks` and `dayTemplates` tables
+- Update queries to filter by current user
+- Migrate existing data to be owned by the appropriate user
+- Update `/admin` section to only show user's own blocks/templates
 
 ## License
 

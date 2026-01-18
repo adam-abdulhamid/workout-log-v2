@@ -2,8 +2,13 @@ import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { eq } from "drizzle-orm";
 import { Calendar, Dumbbell, Blocks, CalendarDays, Settings, LineChart, HeartPulse } from "lucide-react";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { FeedbackNavItem } from "@/components/feedback/feedback-nav-item";
 
 const navigation = [
   { name: "Calendar", href: "/calendar", icon: Calendar },
@@ -19,11 +24,18 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await currentUser();
+  const clerkUser = await currentUser();
 
-  if (!user) {
+  if (!clerkUser) {
     redirect("/sign-in");
   }
+
+  // Query user from database to get isFeedbackUser flag
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.clerkId, clerkUser.id),
+  });
+
+  const isFeedbackUser = dbUser?.isFeedbackUser ?? false;
 
   return (
     <div className="flex min-h-screen min-h-dvh">
@@ -48,6 +60,7 @@ export default async function DashboardLayout({
               {item.name}
             </Link>
           ))}
+          {isFeedbackUser && <FeedbackNavItem variant="desktop" />}
         </nav>
       </aside>
 
@@ -55,7 +68,7 @@ export default async function DashboardLayout({
       <div className="flex flex-1 flex-col md:ml-56">
         {/* Header */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-background/95 backdrop-blur px-4 md:px-6">
-          <MobileNav />
+          <MobileNav isFeedbackUser={isFeedbackUser} />
           <Link
             href="/calendar"
             className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-primary md:hidden"
@@ -71,6 +84,9 @@ export default async function DashboardLayout({
         {/* Page content */}
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
+
+      {/* Feedback button - only visible to feedback users */}
+      {isFeedbackUser && <FeedbackButton />}
     </div>
   );
 }

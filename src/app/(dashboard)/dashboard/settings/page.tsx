@@ -1,6 +1,21 @@
+import { auth } from "@clerk/nextjs/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FeedbackSettings } from "@/components/feedback/feedback-settings";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const { userId: clerkId } = await auth();
+
+  let isFeedbackUser = false;
+  if (clerkId) {
+    const dbUser = await db.query.users.findFirst({
+      where: eq(users.clerkId, clerkId),
+    });
+    isFeedbackUser = dbUser?.isFeedbackUser ?? false;
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -23,6 +38,20 @@ export default function SettingsPage() {
           </p>
         </CardContent>
       </Card>
+
+      {isFeedbackUser && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Developer</CardTitle>
+            <CardDescription>
+              Options for feedback and testing
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FeedbackSettings />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

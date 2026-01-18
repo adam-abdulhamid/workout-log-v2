@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Calendar, Blocks, CalendarDays, Settings, Dumbbell, LineChart, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FeedbackNavItem } from "@/components/feedback/feedback-nav-item";
 
 const navigation = [
   { name: "Calendar", href: "/calendar", icon: Calendar },
@@ -17,7 +18,11 @@ const navigation = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
-export function MobileNav() {
+interface MobileNavProps {
+  isFeedbackUser?: boolean;
+}
+
+export function MobileNav({ isFeedbackUser = false }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
@@ -103,6 +108,9 @@ export function MobileNav() {
                     {item.name}
                   </Link>
                 ))}
+                {isFeedbackUser && (
+                  <FeedbackNavItem variant="mobile" onNavigate={() => setIsOpen(false)} />
+                )}
               </nav>
             </div>
           </>,

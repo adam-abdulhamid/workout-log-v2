@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   imageUrl: text("image_url"),
+  isFeedbackUser: boolean("is_feedback_user").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -30,6 +31,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   workoutLogs: many(workoutLogs),
   weightEntries: many(weightEntries),
   injuryEntries: many(injuryEntries),
+  feedbackEntries: many(feedbackEntries),
 }));
 
 // ============================================================================
@@ -232,6 +234,33 @@ export const injuryEntriesRelations = relations(injuryEntries, ({ one }) => ({
 }));
 
 // ============================================================================
+// FEEDBACK ENTRIES
+// ============================================================================
+
+export const feedbackEntries = pgTable("feedback_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  description: text("description"),
+  screenshot: text("screenshot").notNull(), // base64 encoded image
+  url: text("url").notNull(),
+  userAgent: text("user_agent"),
+  screenWidth: integer("screen_width"),
+  screenHeight: integer("screen_height"),
+  status: text("status").notNull().default("open"), // "open" | "fixed" | "wont_fix"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const feedbackEntriesRelations = relations(feedbackEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [feedbackEntries.userId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
 // EXERCISE LOGS (Individual set performance)
 // ============================================================================
 
@@ -351,3 +380,6 @@ export type NewExerciseSnapshot = typeof exerciseSnapshots.$inferInsert;
 
 export type InjuryEntry = typeof injuryEntries.$inferSelect;
 export type NewInjuryEntry = typeof injuryEntries.$inferInsert;
+
+export type FeedbackEntry = typeof feedbackEntries.$inferSelect;
+export type NewFeedbackEntry = typeof feedbackEntries.$inferInsert;
