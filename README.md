@@ -1,9 +1,13 @@
 # App Starter
 
-A minimal, production-ready Next.js starter kit with authentication, database, and email configured out of the box.
+A minimal, production-ready Next.js starter kit. Supports two modes:
+
+- **Full mode**: Apps with authentication, database, and email
+- **Simple mode**: Lightweight apps/landing pages without auth infrastructure
 
 ## Tech Stack
 
+### Full Mode
 - **Framework:** Next.js 14+ (App Router)
 - **Language:** TypeScript
 - **Database:** Neon (PostgreSQL) + Drizzle ORM
@@ -12,7 +16,34 @@ A minimal, production-ready Next.js starter kit with authentication, database, a
 - **Email:** Resend
 - **Testing:** Vitest
 
-## Getting Started
+### Simple Mode
+- **Framework:** Next.js 14+ (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Testing:** Vitest
+
+## Quick Start (Fork a New Project)
+
+The recommended way to use this template is via the fork script:
+
+```bash
+# Full app with auth, database, and email
+./fork.sh my-app
+
+# Simple app without auth/db/email
+./fork.sh my-app --simple
+```
+
+This creates a new project in `~/Code/apps/<project-name>` with:
+- A new GitHub repository
+- Neon database (full mode only)
+- Environment variables configured
+
+### Prerequisites for fork.sh
+- GitHub CLI: `brew install gh && gh auth login`
+- Neon CLI (full mode): `brew install neonctl && neonctl auth`
+
+## Manual Setup
 
 ### 1. Clone and Install
 
@@ -110,20 +141,27 @@ docker-compose up
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/             # Auth pages (sign-in, sign-up)
-│   ├── (dashboard)/        # Protected dashboard pages
+│   ├── (auth)/             # Auth pages (sign-in, sign-up) [full mode]
+│   ├── (dashboard)/        # Protected dashboard pages [full mode]
 │   ├── api/                # API routes
 │   ├── layout.tsx          # Root layout
 │   └── page.tsx            # Landing page
 ├── components/
 │   └── ui/                 # shadcn/ui components
-├── db/
+├── db/                     # Database (Drizzle) [full mode]
 │   ├── index.ts            # Database connection
 │   └── schema.ts           # Drizzle schema
 ├── lib/
-│   ├── email.ts            # Email helpers
+│   ├── email.ts            # Email helpers [full mode]
 │   └── utils.ts            # Utility functions
-└── middleware.ts           # Clerk auth middleware
+└── middleware.ts           # Clerk auth middleware [full mode]
+
+templates/
+└── simple/                 # Override files for --simple mode
+    ├── app/layout.tsx      # Layout without ClerkProvider
+    ├── app/page.tsx        # Page without auth
+    ├── package.json        # Minimal dependencies
+    └── env.local           # Minimal env template
 ```
 
 ## License

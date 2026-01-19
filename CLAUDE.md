@@ -4,16 +4,28 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-This is a Next.js starter kit template for building login-based web applications. It's designed to be forked and customized for specific applications.
+This is a Next.js starter kit template for building web applications. It's designed to be forked using `fork.sh` and customized for specific applications. Supports two modes:
+
+- **Full mode** (default): Login-based apps with auth, database, and email
+- **Simple mode** (`--simple`): Lightweight apps/landing pages without auth infrastructure
 
 ## Tech Stack
 
+### Full Mode
 - **Framework:** Next.js 14+ (App Router)
 - **Language:** TypeScript
 - **Database:** Neon (PostgreSQL) with Drizzle ORM
 - **Auth:** Clerk
 - **Styling:** Tailwind CSS v4 + shadcn/ui
 - **Email:** Resend
+- **Analytics:** PostHog (optional)
+- **Testing:** Vitest
+- **Deployment:** Docker on VPS
+
+### Simple Mode
+- **Framework:** Next.js 14+ (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4 + shadcn/ui
 - **Analytics:** PostHog (optional)
 - **Testing:** Vitest
 - **Deployment:** Docker on VPS
@@ -32,8 +44,21 @@ pnpm db:generate  # Generate migrations
 pnpm db:studio    # Open Drizzle Studio
 ```
 
+## Forking a New Project
+
+```bash
+# Full app with auth, database, and email
+./fork.sh my-app
+
+# Simple app without auth/db/email (landing pages, etc.)
+./fork.sh my-app --simple
+```
+
+Projects are created in `~/Code/apps/<project-name>`.
+
 ## Project Structure
 
+### Root (Full Mode)
 - `src/app/` - Next.js App Router pages and API routes
 - `src/app/(auth)/` - Authentication pages (sign-in, sign-up)
 - `src/app/(dashboard)/` - Protected dashboard pages
@@ -44,6 +69,9 @@ pnpm db:studio    # Open Drizzle Studio
 - `src/lib/` - Utility functions and email helpers
 - `src/middleware.ts` - Clerk auth middleware
 - `tests/` - Vitest tests
+
+### Templates
+- `templates/simple/` - Override files for simple mode (layout, page, package.json, env)
 
 ## Key Patterns
 
