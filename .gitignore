@@ -41,5 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code (keep local settings private, but share skills)
-.claude/settings.local.json
+# claude code
+.claude/*
+!.claude/skills/
