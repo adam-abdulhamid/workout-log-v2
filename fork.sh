@@ -100,11 +100,26 @@ else
     TOTAL_STEPS=5
 fi
 
-# --- Step 1: Copy files ---
-echo -e "${BLUE}[1/$TOTAL_STEPS] Copying files to $TARGET_DIR...${NC}"
-mkdir -p "$TARGET_DIR"
-rsync -a --exclude='.git' --exclude='node_modules' --exclude='.next' --exclude='templates' "$SCRIPT_DIR/" "$TARGET_DIR/"
+# --- Step 1: Clone repository (preserves history for upstream merges) ---
+echo -e "${BLUE}[1/$TOTAL_STEPS] Cloning app-starter to $TARGET_DIR...${NC}"
+
+# Get the app-starter repo URL
+APP_STARTER_REPO=$(cd "$SCRIPT_DIR" && git remote get-url origin 2>/dev/null || echo "")
+if [ -z "$APP_STARTER_REPO" ]; then
+    echo -e "${RED}Error: Could not get app-starter remote URL${NC}"
+    exit 1
+fi
+
+# Clone the repository
+git clone "$APP_STARTER_REPO" "$TARGET_DIR"
 cd "$TARGET_DIR"
+
+# Rename origin to app-starter (for future upstream merges)
+git remote rename origin app-starter
+
+# Remove files that shouldn't be in forked projects
+rm -rf templates
+rm -f fork.sh deploy.sh
 
 # Initialize variables
 DATABASE_URL=""
@@ -127,11 +142,11 @@ if [ "$SIMPLE_MODE" = true ]; then
     rm -rf src/db 2>/dev/null || true
     rm -f src/middleware.ts 2>/dev/null || true
 
-    # Copy simple mode templates
-    cp "$SCRIPT_DIR/templates/simple/app/layout.tsx" src/app/layout.tsx
-    cp "$SCRIPT_DIR/templates/simple/app/page.tsx" src/app/page.tsx
-    cp "$SCRIPT_DIR/templates/simple/package.json" package.json
-    cp "$SCRIPT_DIR/templates/simple/env.local" .env.local
+    # Copy simple mode templates (from original app-starter, not the clone)
+    git show app-starter:templates/simple/app/layout.tsx > src/app/layout.tsx
+    git show app-starter:templates/simple/app/page.tsx > src/app/page.tsx
+    git show app-starter:templates/simple/package.json > package.json
+    git show app-starter:templates/simple/env.local > .env.local
 
     # Remove full-mode-only files
     rm -f drizzle.config.ts
@@ -244,20 +259,26 @@ EOF
     echo -e "  ${GREEN}✓${NC} Created .env.local"
 fi
 
-# --- Initialize git and push ---
+# --- Commit changes and create GitHub repo ---
 echo ""
 FINAL_STEP=$((TOTAL_STEPS + 1))
 echo -e "${BLUE}[$FINAL_STEP/$FINAL_STEP] Setting up Git repository...${NC}"
-git init -b main
-git add .
+
+# Stage all changes (removed files, modified files)
+git add -A
+
+# Commit the fork-specific changes on top of app-starter history
 if [ "$SIMPLE_MODE" = true ]; then
-    git commit -m "Initial commit: forked from app-starter (simple mode)"
+    git commit -m "fork: Initialize $PROJECT_NAME from app-starter (simple mode)"
 else
-    git commit -m "Initial commit: forked from app-starter"
+    git commit -m "fork: Initialize $PROJECT_NAME from app-starter"
 fi
 
+# Create new GitHub repo and add as origin
 echo "  Creating GitHub repository: $GH_USER/$PROJECT_NAME..."
-gh repo create "$PROJECT_NAME" --private --source=. --remote=origin --push
+gh repo create "$PROJECT_NAME" --private
+git remote add origin "https://github.com/$GH_USER/$PROJECT_NAME.git"
+git push -u origin main
 
 # --- Done! ---
 echo ""
@@ -283,3 +304,7 @@ fi
 echo "  pnpm db:push        # Push schema to database"
 echo "  pnpm dev            # Start development server"
 fi
+echo ""
+echo -e "${BLUE}To merge upstream changes from app-starter:${NC}"
+echo "  git fetch app-starter main"
+echo "  git merge app-starter/main"
