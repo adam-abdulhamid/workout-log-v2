@@ -36,24 +36,26 @@ function parseBlockMarkdown(markdown: string): ParsedBlock {
   for (const line of lines) {
     const trimmedLine = line.trim();
 
-    // Parse header: # Block: Push
+    // Parse header: # Block: Push or # Block: Push
     if (trimmedLine.startsWith("# Block:")) {
       result.name = trimmedLine.replace("# Block:", "").trim();
       continue;
     }
 
-    // Parse metadata
-    if (trimmedLine.startsWith("**Category:**")) {
-      result.category = trimmedLine.replace("**Category:**", "").trim();
+    // Parse metadata - support both "**Category:**" and "Category:" formats
+    const categoryMatch = trimmedLine.match(/^\*?\*?Category:?\*?\*?\s*(.+)/i);
+    if (categoryMatch) {
+      result.category = categoryMatch[1].trim();
       continue;
     }
-    if (trimmedLine.startsWith("**Description:**")) {
-      result.description = trimmedLine.replace("**Description:**", "").trim();
+    const descriptionMatch = trimmedLine.match(/^\*?\*?Description:?\*?\*?\s*(.+)/i);
+    if (descriptionMatch) {
+      result.description = descriptionMatch[1].trim();
       continue;
     }
 
-    // Parse week header: ## Week 1
-    const weekMatch = trimmedLine.match(/^## Week (\d+)/);
+    // Parse week header: "## Week 1" or "Week 1" (with or without ##)
+    const weekMatch = trimmedLine.match(/^#*\s*Week\s+(\d+)/i);
     if (weekMatch) {
       currentWeek = parseInt(weekMatch[1]);
       result.weeks[currentWeek] = [];
@@ -63,7 +65,8 @@ function parseBlockMarkdown(markdown: string): ParsedBlock {
 
     // Parse table rows
     if (trimmedLine.startsWith("|") && currentWeek) {
-      if (trimmedLine.includes("---")) {
+      // Check for separator row (contains only |, -, :, and spaces)
+      if (/^[\s|:\-]+$/.test(trimmedLine)) {
         inTable = true;
         continue;
       }
@@ -202,6 +205,12 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
-    message: `Imported ${totalExercises} exercises`,
+    message: `Imported ${totalExercises} exercises across ${Object.keys(parsed.weeks).length} weeks`,
+    debug: {
+      weeksFound: Object.keys(parsed.weeks).map(Number),
+      exercisesPerWeek: Object.fromEntries(
+        Object.entries(parsed.weeks).map(([week, exs]) => [week, exs.length])
+      ),
+    },
   });
 }

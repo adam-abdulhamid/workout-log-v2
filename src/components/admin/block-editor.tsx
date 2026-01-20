@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Plus, Trash2, Copy } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Copy, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,10 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   const [activeWeek, setActiveWeek] = useState("1");
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copyTargets, setCopyTargets] = useState<number[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importMarkdown, setImportMarkdown] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [deletedExercises, setDeletedExercises] = useState<Record<number, string[]>>({});
 
   // Edited values
   const [name, setName] = useState("");
@@ -55,7 +59,7 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   async function loadBlock() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/blocks/${blockId}`);
+      const res = await fetch(`/api/blocks/${blockId}`, { cache: "no-store" });
       if (res.ok) {
         const data: BlockDetail = await res.json();
         setBlock(data);
@@ -72,6 +76,7 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
         }
         setWeekNotes(notes);
         setWeekExercises(exercises);
+        setDeletedExercises({});
       }
     } catch (error) {
       console.error("Failed to load block:", error);
@@ -84,28 +89,46 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
     setSaving(true);
     try {
       // Update block metadata
-      await fetch(`/api/blocks/${blockId}`, {
+      const metaRes = await fetch(`/api/blocks/${blockId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, category, description }),
       });
+      if (!metaRes.ok) {
+        const error = await metaRes.json();
+        alert(`Failed to save block metadata: ${error.error || "Unknown error"}`);
+        return;
+      }
 
       // Update each week's exercises
       for (let weekNum = 1; weekNum <= 6; weekNum++) {
-        await fetch(`/api/blocks/${blockId}/week/${weekNum}`, {
+        // Strip IDs from new exercises so API creates them instead of trying to update
+        const exercises = (weekExercises[weekNum] || []).map((ex) => ({
+          ...ex,
+          id: ex.id?.startsWith("new-") ? undefined : ex.id,
+        }));
+        const weekRes = await fetch(`/api/blocks/${blockId}/week/${weekNum}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             notes: weekNotes[weekNum] || "",
-            exercises: weekExercises[weekNum] || [],
+            exercises,
+            deletedExercises: deletedExercises[weekNum] || [],
           }),
         });
+        if (!weekRes.ok) {
+          const error = await weekRes.json();
+          alert(`Failed to save week ${weekNum}: ${error.error || "Unknown error"}`);
+          return;
+        }
       }
 
-      // Reload to get updated data
+      // Clear deleted exercises tracking and reload
+      setDeletedExercises({});
       await loadBlock();
     } catch (error) {
       console.error("Failed to save block:", error);
+      alert(`Failed to save block: ${error}`);
     } finally {
       setSaving(false);
     }
@@ -129,6 +152,49 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
       await loadBlock();
     } catch (error) {
       console.error("Failed to copy week:", error);
+    }
+  }
+
+  async function exportBlock() {
+    try {
+      const res = await fetch(`/api/blocks/${blockId}/export`);
+      if (res.ok) {
+        const data = await res.json();
+        await navigator.clipboard.writeText(data.markdown);
+        alert("Block exported to clipboard!");
+      }
+    } catch (error) {
+      console.error("Failed to export block:", error);
+      alert("Failed to export block");
+    }
+  }
+
+  async function importBlock() {
+    if (!importMarkdown.trim()) return;
+
+    setImporting(true);
+    try {
+      const res = await fetch(`/api/blocks/${blockId}/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markdown: importMarkdown }),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        setImportDialogOpen(false);
+        setImportMarkdown("");
+        await loadBlock();
+        alert(`${result.message}`);
+      } else {
+        const error = await res.json();
+        alert(`Import failed: ${error.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Failed to import block:", error);
+      alert("Failed to import block");
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -166,6 +232,13 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   }
 
   function removeExercise(weekNum: number, exerciseId: string) {
+    // Track deleted exercises (only if it's a real ID, not a new one)
+    if (!exerciseId.startsWith("new-")) {
+      setDeletedExercises((prev) => ({
+        ...prev,
+        [weekNum]: [...(prev[weekNum] || []), exerciseId],
+      }));
+    }
     setWeekExercises((prev) => ({
       ...prev,
       [weekNum]: (prev[weekNum] || []).filter((ex) => ex.id !== exerciseId),
@@ -209,10 +282,20 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
           </Button>
           <h1 className="text-2xl font-bold">Edit Block: {block.name}</h1>
         </div>
-        <Button onClick={saveBlock} disabled={saving}>
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportBlock}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button onClick={saveBlock} disabled={saving}>
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </div>
 
       {/* Block Metadata */}
@@ -459,6 +542,44 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
             </Button>
             <Button onClick={copyWeek} disabled={copyTargets.length === 0}>
               Copy to {copyTargets.length} Week(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import Block from Markdown</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Paste the markdown content below. This will replace the existing exercises in the block.
+            </p>
+            <Textarea
+              value={importMarkdown}
+              onChange={(e) => setImportMarkdown(e.target.value)}
+              placeholder={`# Block: ${block.name}
+
+**Category:** ${category}
+**Description:** ${description}
+
+## Week 1
+
+| # | Exercise | Sets | Reps | Tempo | Rest | Notes |
+|---|----------|------|------|-------|------|-------|
+| 1 | Bench Press | 4 | 6-8 | 3010 | 2:00 | |`}
+              rows={15}
+              className="font-mono text-sm"
+            />
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={importBlock} disabled={importing || !importMarkdown.trim()}>
+              {importing ? "Importing..." : "Import"}
             </Button>
           </DialogFooter>
         </DialogContent>
