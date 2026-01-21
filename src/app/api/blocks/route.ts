@@ -8,7 +8,7 @@ import {
   dayTemplateBlocks,
   dayTemplates,
 } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, inArray, and } from "drizzle-orm";
 import type { BlockSummary, CreateBlockPayload } from "@/types/workout";
 
 // GET all blocks with summary info
@@ -23,40 +23,79 @@ export async function GET() {
     orderBy: [asc(blocks.category), asc(blocks.name)],
   });
 
-  const result: BlockSummary[] = [];
+  const blockIds = allBlocks.map((b) => b.id);
 
-  for (const block of allBlocks) {
-    // Get week 1 to count exercises
-    const week1 = await db.query.blockWeeks.findFirst({
-      where: eq(blockWeeks.blockId, block.id),
-    });
+  // Batch load week 1 for all blocks
+  const allWeek1s =
+    blockIds.length > 0
+      ? await db.query.blockWeeks.findMany({
+          where: and(
+            inArray(blockWeeks.blockId, blockIds),
+            eq(blockWeeks.weekNumber, 1)
+          ),
+        })
+      : [];
+  const week1Map = new Map(allWeek1s.map((w) => [w.blockId, w]));
 
-    let exerciseCount = 0;
-    if (week1) {
-      const exercises = await db.query.blockWeekExercises.findMany({
-        where: eq(blockWeekExercises.blockWeekId, week1.id),
-      });
-      exerciseCount = exercises.filter((e) => e.isActive).length;
+  // Batch load all exercises for week 1s
+  const week1Ids = allWeek1s.map((w) => w.id);
+  const allExercises =
+    week1Ids.length > 0
+      ? await db.query.blockWeekExercises.findMany({
+          where: inArray(blockWeekExercises.blockWeekId, week1Ids),
+        })
+      : [];
+
+  // Group exercises by blockWeekId and count active ones
+  const exerciseCountMap = new Map<string, number>();
+  for (const ex of allExercises) {
+    if (ex.isActive) {
+      const count = exerciseCountMap.get(ex.blockWeekId) || 0;
+      exerciseCountMap.set(ex.blockWeekId, count + 1);
     }
+  }
 
-    // Get days that use this block
-    const daysUsed = await db
-      .select({ name: dayTemplates.name })
-      .from(dayTemplateBlocks)
-      .innerJoin(dayTemplates, eq(dayTemplateBlocks.dayTemplateId, dayTemplates.id))
-      .where(eq(dayTemplateBlocks.blockId, block.id));
+  // Batch load all day assignments
+  const allDayAssignments =
+    blockIds.length > 0
+      ? await db
+          .select({
+            blockId: dayTemplateBlocks.blockId,
+            dayName: dayTemplates.name,
+          })
+          .from(dayTemplateBlocks)
+          .innerJoin(
+            dayTemplates,
+            eq(dayTemplateBlocks.dayTemplateId, dayTemplates.id)
+          )
+          .where(inArray(dayTemplateBlocks.blockId, blockIds))
+      : [];
 
-    result.push({
+  // Group day assignments by blockId
+  const daysUsedMap = new Map<string, string[]>();
+  for (const assignment of allDayAssignments) {
+    const days = daysUsedMap.get(assignment.blockId) || [];
+    days.push(assignment.dayName);
+    daysUsedMap.set(assignment.blockId, days);
+  }
+
+  // Build result
+  const result: BlockSummary[] = allBlocks.map((block) => {
+    const week1 = week1Map.get(block.id);
+    const exerciseCount = week1 ? exerciseCountMap.get(week1.id) || 0 : 0;
+    const daysUsed = daysUsedMap.get(block.id) || [];
+
+    return {
       id: block.id,
       name: block.name,
       description: block.description,
       category: block.category,
       exerciseCount,
-      daysUsed: daysUsed.map((d) => d.name),
+      daysUsed,
       version: block.version,
       lastModified: block.lastModified?.toISOString() || null,
-    });
-  }
+    };
+  });
 
   return NextResponse.json(result);
 }

@@ -12,7 +12,7 @@ import {
   blockNoteLogs,
   users,
 } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { getWorkoutForDateString } from "@/lib/workout-cycle";
 import type { WorkoutData, WorkoutBlock, WorkoutExercise } from "@/types/workout";
 
@@ -100,27 +100,47 @@ export async function GET(
     .where(eq(dayTemplateBlocks.dayTemplateId, dayTemplate.id))
     .orderBy(asc(dayTemplateBlocks.order));
 
-  // Build workout blocks data
-  const workoutBlocks: WorkoutBlock[] = [];
+  // Build workout blocks data - BATCH queries to avoid N+1
+  const blockIds = dayBlocks.map((db) => db.block.id);
 
-  for (const { block } of dayBlocks) {
-    // Get the BlockWeek for the current prescription week
-    const blockWeek = await db.query.blockWeeks.findFirst({
-      where: and(
-        eq(blockWeeks.blockId, block.id),
-        eq(blockWeeks.weekNumber, workoutInfo.prescriptionWeek)
-      ),
-    });
+  // Batch load all blockWeeks for these blocks at the prescription week
+  const allBlockWeeks =
+    blockIds.length > 0
+      ? await db.query.blockWeeks.findMany({
+          where: and(
+            inArray(blockWeeks.blockId, blockIds),
+            eq(blockWeeks.weekNumber, workoutInfo.prescriptionWeek)
+          ),
+        })
+      : [];
+  const blockWeeksMap = new Map(allBlockWeeks.map((bw) => [bw.blockId, bw]));
 
-    // Get exercises for this week
-    const weekExercises = blockWeek
+  // Batch load all exercises for these blockWeeks
+  const blockWeekIds = allBlockWeeks.map((bw) => bw.id);
+  const allExercises =
+    blockWeekIds.length > 0
       ? await db.query.blockWeekExercises.findMany({
           where: and(
-            eq(blockWeekExercises.blockWeekId, blockWeek.id),
+            inArray(blockWeekExercises.blockWeekId, blockWeekIds),
             eq(blockWeekExercises.isActive, true)
           ),
           orderBy: asc(blockWeekExercises.order),
         })
+      : [];
+
+  // Group exercises by blockWeekId
+  const exercisesByBlockWeek = new Map<string, typeof allExercises>();
+  for (const ex of allExercises) {
+    const existing = exercisesByBlockWeek.get(ex.blockWeekId) || [];
+    existing.push(ex);
+    exercisesByBlockWeek.set(ex.blockWeekId, existing);
+  }
+
+  // Build workout blocks
+  const workoutBlocks: WorkoutBlock[] = dayBlocks.map(({ block }) => {
+    const blockWeek = blockWeeksMap.get(block.id);
+    const weekExercises = blockWeek
+      ? exercisesByBlockWeek.get(blockWeek.id) || []
       : [];
 
     const exercises: WorkoutExercise[] = weekExercises.map((ex) => ({
@@ -135,14 +155,14 @@ export async function GET(
       notes: ex.notes,
     }));
 
-    workoutBlocks.push({
+    return {
       id: block.id,
       name: `${block.name} (Week ${workoutInfo.prescriptionWeek})`,
       category: block.category,
       exercises,
       existingNote: blockNotesMap.get(block.id) || null,
-    });
-  }
+    };
+  });
 
   const workoutData: WorkoutData = {
     date: dateStr,

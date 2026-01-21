@@ -8,6 +8,7 @@ import {
   date,
   real,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -88,7 +89,11 @@ export const dayTemplateBlocks = pgTable(
       .references(() => blocks.id, { onDelete: "cascade" }),
     order: integer("order").notNull(),
   },
-  (table) => [unique("unique_day_block").on(table.dayTemplateId, table.blockId)]
+  (table) => [
+    unique("unique_day_block").on(table.dayTemplateId, table.blockId),
+    index("idx_day_template_blocks_block").on(table.blockId),
+    index("idx_day_template_blocks_template").on(table.dayTemplateId),
+  ]
 );
 
 export const dayTemplateBlocksRelations = relations(
@@ -119,7 +124,10 @@ export const blockWeeks = pgTable(
     weekNumber: integer("week_number").notNull(), // 1-6
     notes: text("notes"),
   },
-  (table) => [unique("unique_block_week").on(table.blockId, table.weekNumber)]
+  (table) => [
+    unique("unique_block_week").on(table.blockId, table.weekNumber),
+    index("idx_block_weeks_block").on(table.blockId),
+  ]
 );
 
 export const blockWeeksRelations = relations(blockWeeks, ({ one, many }) => ({
@@ -134,21 +142,25 @@ export const blockWeeksRelations = relations(blockWeeks, ({ one, many }) => ({
 // BLOCK WEEK EXERCISES (Exercise prescriptions for each week)
 // ============================================================================
 
-export const blockWeekExercises = pgTable("block_week_exercises", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  blockWeekId: uuid("block_week_id")
-    .notNull()
-    .references(() => blockWeeks.id, { onDelete: "cascade" }),
-  order: integer("order").notNull(),
-  name: text("name").notNull(),
-  sets: integer("sets"),
-  reps: text("reps"), // String to support ranges like "6-8"
-  tempo: text("tempo"), // e.g., "3010"
-  rest: text("rest"), // e.g., "2:00-3:00"
-  weightGuidance: text("weight_guidance"), // e.g., "RPE 7", "+5lb from week 3"
-  notes: text("notes"),
-  isActive: boolean("is_active").default(true).notNull(),
-});
+export const blockWeekExercises = pgTable(
+  "block_week_exercises",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    blockWeekId: uuid("block_week_id")
+      .notNull()
+      .references(() => blockWeeks.id, { onDelete: "cascade" }),
+    order: integer("order").notNull(),
+    name: text("name").notNull(),
+    sets: integer("sets"),
+    reps: text("reps"), // String to support ranges like "6-8"
+    tempo: text("tempo"), // e.g., "3010"
+    rest: text("rest"), // e.g., "2:00-3:00"
+    weightGuidance: text("weight_guidance"), // e.g., "RPE 7", "+5lb from week 3"
+    notes: text("notes"),
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  (table) => [index("idx_block_week_exercises_week").on(table.blockWeekId)]
+);
 
 export const blockWeekExercisesRelations = relations(
   blockWeekExercises,
@@ -166,17 +178,23 @@ export const blockWeekExercisesRelations = relations(
 // WORKOUT LOGS (Daily workout session records)
 // ============================================================================
 
-export const workoutLogs = pgTable("workout_logs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  date: date("date").notNull(),
-  dayTemplateId: uuid("day_template_id").references(() => dayTemplates.id),
-  completed: boolean("completed").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const workoutLogs = pgTable(
+  "workout_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    dayTemplateId: uuid("day_template_id").references(() => dayTemplates.id),
+    completed: boolean("completed").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_workout_logs_user_date").on(table.userId, table.date),
+  ]
+);
 
 export const workoutLogsRelations = relations(workoutLogs, ({ one, many }) => ({
   user: one(users, {
@@ -264,19 +282,26 @@ export const feedbackEntriesRelations = relations(feedbackEntries, ({ one }) => 
 // EXERCISE LOGS (Individual set performance)
 // ============================================================================
 
-export const exerciseLogs = pgTable("exercise_logs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workoutLogId: uuid("workout_log_id")
-    .notNull()
-    .references(() => workoutLogs.id, { onDelete: "cascade" }),
-  exerciseId: uuid("exercise_id")
-    .notNull()
-    .references(() => blockWeekExercises.id),
-  setNumber: integer("set_number").notNull(),
-  reps: integer("reps"),
-  weight: real("weight"),
-  notes: text("notes"),
-});
+export const exerciseLogs = pgTable(
+  "exercise_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workoutLogId: uuid("workout_log_id")
+      .notNull()
+      .references(() => workoutLogs.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id")
+      .notNull()
+      .references(() => blockWeekExercises.id),
+    setNumber: integer("set_number").notNull(),
+    reps: integer("reps"),
+    weight: real("weight"),
+    notes: text("notes"),
+  },
+  (table) => [
+    index("idx_exercise_logs_workout").on(table.workoutLogId),
+    index("idx_exercise_logs_exercise").on(table.exerciseId),
+  ]
+);
 
 export const exerciseLogsRelations = relations(exerciseLogs, ({ one }) => ({
   workoutLog: one(workoutLogs, {
@@ -293,16 +318,20 @@ export const exerciseLogsRelations = relations(exerciseLogs, ({ one }) => ({
 // BLOCK NOTE LOGS (Per-block session notes)
 // ============================================================================
 
-export const blockNoteLogs = pgTable("block_note_logs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workoutLogId: uuid("workout_log_id")
-    .notNull()
-    .references(() => workoutLogs.id, { onDelete: "cascade" }),
-  blockId: uuid("block_id")
-    .notNull()
-    .references(() => blocks.id, { onDelete: "cascade" }),
-  notes: text("notes"),
-});
+export const blockNoteLogs = pgTable(
+  "block_note_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workoutLogId: uuid("workout_log_id")
+      .notNull()
+      .references(() => workoutLogs.id, { onDelete: "cascade" }),
+    blockId: uuid("block_id")
+      .notNull()
+      .references(() => blocks.id, { onDelete: "cascade" }),
+    notes: text("notes"),
+  },
+  (table) => [index("idx_block_note_logs_workout").on(table.workoutLogId)]
+);
 
 export const blockNoteLogsRelations = relations(blockNoteLogs, ({ one }) => ({
   workoutLog: one(workoutLogs, {
@@ -319,20 +348,24 @@ export const blockNoteLogsRelations = relations(blockNoteLogs, ({ one }) => ({
 // EXERCISE SNAPSHOTS (Historical preservation of exercise definitions)
 // ============================================================================
 
-export const exerciseSnapshots = pgTable("exercise_snapshots", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  exerciseLogId: uuid("exercise_log_id")
-    .notNull()
-    .references(() => exerciseLogs.id, { onDelete: "cascade" }),
-  exerciseId: uuid("exercise_id").notNull(), // Original exercise ID at time of logging
-  name: text("name").notNull(),
-  sets: integer("sets"),
-  reps: text("reps"),
-  tempo: text("tempo"),
-  rest: text("rest"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const exerciseSnapshots = pgTable(
+  "exercise_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    exerciseLogId: uuid("exercise_log_id")
+      .notNull()
+      .references(() => exerciseLogs.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id").notNull(), // Original exercise ID at time of logging
+    name: text("name").notNull(),
+    sets: integer("sets"),
+    reps: text("reps"),
+    tempo: text("tempo"),
+    rest: text("rest"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("idx_exercise_snapshots_log").on(table.exerciseLogId)]
+);
 
 export const exerciseSnapshotsRelations = relations(
   exerciseSnapshots,

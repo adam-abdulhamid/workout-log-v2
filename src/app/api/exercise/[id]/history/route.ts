@@ -7,7 +7,7 @@ import {
   exerciseSnapshots,
   users,
 } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import type { ExerciseHistoryEntry } from "@/types/workout";
 
 export async function GET(
@@ -48,32 +48,42 @@ export async function GET(
     .orderBy(desc(workoutLogs.date))
     .limit(50);
 
-  // Get snapshots for these exercise logs
-  const history: ExerciseHistoryEntry[] = [];
+  // Batch load all snapshots for these exercise logs
+  const exerciseLogIds = logs.map((l) => l.exerciseLog.id);
+  const allSnapshots =
+    exerciseLogIds.length > 0
+      ? await db.query.exerciseSnapshots.findMany({
+          where: inArray(exerciseSnapshots.exerciseLogId, exerciseLogIds),
+        })
+      : [];
 
-  for (const { exerciseLog, workoutLog } of logs) {
-    // Get snapshot for this log
-    const snapshot = await db.query.exerciseSnapshots.findFirst({
-      where: eq(exerciseSnapshots.exerciseLogId, exerciseLog.id),
-    });
+  // Create a map for quick lookup
+  const snapshotMap = new Map(
+    allSnapshots.map((s) => [s.exerciseLogId, s])
+  );
 
-    history.push({
-      date: workoutLog.date,
-      setNumber: exerciseLog.setNumber,
-      reps: exerciseLog.reps,
-      weight: exerciseLog.weight,
-      notes: exerciseLog.notes,
-      prescribed: snapshot
-        ? {
-            name: snapshot.name,
-            sets: snapshot.sets,
-            reps: snapshot.reps,
-            tempo: snapshot.tempo,
-            rest: snapshot.rest,
-          }
-        : null,
-    });
-  }
+  // Build history from logs and snapshots
+  const history: ExerciseHistoryEntry[] = logs.map(
+    ({ exerciseLog, workoutLog }) => {
+      const snapshot = snapshotMap.get(exerciseLog.id);
+      return {
+        date: workoutLog.date,
+        setNumber: exerciseLog.setNumber,
+        reps: exerciseLog.reps,
+        weight: exerciseLog.weight,
+        notes: exerciseLog.notes,
+        prescribed: snapshot
+          ? {
+              name: snapshot.name,
+              sets: snapshot.sets,
+              reps: snapshot.reps,
+              tempo: snapshot.tempo,
+              rest: snapshot.rest,
+            }
+          : null,
+      };
+    }
+  );
 
   return NextResponse.json(history);
 }

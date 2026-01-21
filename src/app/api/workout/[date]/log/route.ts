@@ -10,7 +10,7 @@ import {
   blockWeekExercises,
   users,
 } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getWorkoutForDateString } from "@/lib/workout-cycle";
 import type { WorkoutLogPayload } from "@/types/workout";
 
@@ -71,48 +71,60 @@ export async function POST(
       .returning();
     workoutLog = result[0];
   } else {
-    // Delete existing exercise logs and snapshots to avoid duplicates
+    // Delete existing exercise logs and snapshots using batch operations
     const existingLogs = await db.query.exerciseLogs.findMany({
       where: eq(exerciseLogs.workoutLogId, workoutLog.id),
     });
 
-    for (const log of existingLogs) {
+    const existingLogIds = existingLogs.map((l) => l.id);
+    if (existingLogIds.length > 0) {
+      // Batch delete all snapshots in one query
       await db
         .delete(exerciseSnapshots)
-        .where(eq(exerciseSnapshots.exerciseLogId, log.id));
+        .where(inArray(exerciseSnapshots.exerciseLogId, existingLogIds));
     }
 
+    // Batch delete all exercise logs in one query
     await db
       .delete(exerciseLogs)
       .where(eq(exerciseLogs.workoutLogId, workoutLog.id));
   }
 
-  // Save exercise logs with snapshots
-  for (const exerciseData of data.exercises) {
-    // Get the exercise definition
-    const exercise = await db.query.blockWeekExercises.findFirst({
-      where: eq(blockWeekExercises.id, exerciseData.exerciseId),
-    });
+  // Batch fetch all exercise definitions upfront
+  const exerciseIds = [...new Set(data.exercises.map((e) => e.exerciseId))];
+  const allExerciseDefs =
+    exerciseIds.length > 0
+      ? await db.query.blockWeekExercises.findMany({
+          where: inArray(blockWeekExercises.id, exerciseIds),
+        })
+      : [];
+  const exerciseDefMap = new Map(allExerciseDefs.map((e) => [e.id, e]));
 
-    // Create exercise log
-    const exerciseLogResult = await db
+  // Insert all exercise logs in batch
+  const exerciseLogInserts = data.exercises.map((exerciseData) => ({
+    workoutLogId: workoutLog!.id,
+    exerciseId: exerciseData.exerciseId,
+    setNumber: exerciseData.setNumber,
+    reps: exerciseData.reps,
+    weight: exerciseData.weight,
+    notes: exerciseData.notes || null,
+  }));
+
+  let insertedLogs: { id: string; exerciseId: string }[] = [];
+  if (exerciseLogInserts.length > 0) {
+    insertedLogs = await db
       .insert(exerciseLogs)
-      .values({
-        workoutLogId: workoutLog.id,
-        exerciseId: exerciseData.exerciseId,
-        setNumber: exerciseData.setNumber,
-        reps: exerciseData.reps,
-        weight: exerciseData.weight,
-        notes: exerciseData.notes || null,
-      })
-      .returning();
+      .values(exerciseLogInserts)
+      .returning({ id: exerciseLogs.id, exerciseId: exerciseLogs.exerciseId });
+  }
 
-    const exerciseLog = exerciseLogResult[0];
-
-    // Create snapshot of exercise definition
-    if (exercise) {
-      await db.insert(exerciseSnapshots).values({
-        exerciseLogId: exerciseLog.id,
+  // Insert all snapshots in batch
+  const snapshotInserts = insertedLogs
+    .map((log) => {
+      const exercise = exerciseDefMap.get(log.exerciseId);
+      if (!exercise) return null;
+      return {
+        exerciseLogId: log.id,
         exerciseId: exercise.id,
         name: exercise.name,
         sets: exercise.sets,
@@ -120,25 +132,30 @@ export async function POST(
         tempo: exercise.tempo,
         rest: exercise.rest,
         notes: exercise.notes,
-      });
-    }
+      };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+
+  if (snapshotInserts.length > 0) {
+    await db.insert(exerciseSnapshots).values(snapshotInserts);
   }
 
-  // Save block notes
-  // First, delete existing block notes for this workout
+  // Save block notes - delete existing and batch insert new ones
   await db
     .delete(blockNoteLogs)
     .where(eq(blockNoteLogs.workoutLogId, workoutLog.id));
 
-  // Then insert new block notes
-  for (const blockNote of data.blockNotes) {
-    if (blockNote.notes && blockNote.notes.trim()) {
-      await db.insert(blockNoteLogs).values({
-        workoutLogId: workoutLog.id,
-        blockId: blockNote.blockId,
-        notes: blockNote.notes.trim(),
-      });
-    }
+  // Batch insert new block notes
+  const blockNoteInserts = data.blockNotes
+    .filter((bn) => bn.notes && bn.notes.trim())
+    .map((bn) => ({
+      workoutLogId: workoutLog!.id,
+      blockId: bn.blockId,
+      notes: bn.notes!.trim(),
+    }));
+
+  if (blockNoteInserts.length > 0) {
+    await db.insert(blockNoteLogs).values(blockNoteInserts);
   }
 
   // Update workout log completed status

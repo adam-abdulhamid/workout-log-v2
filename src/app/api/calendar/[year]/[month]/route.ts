@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { workoutLogs, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { getWorkoutForDate, formatDate } from "@/lib/workout-cycle";
 
 export async function GET(
@@ -43,19 +43,16 @@ export async function GET(
   const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
   const endDate = `${year}-${String(month).padStart(2, "0")}-${daysInMonth}`;
 
-  // Get all workout logs for this month
+  // Get workout logs for this month only (filter in database, not in JS)
   const logs = await db.query.workoutLogs.findMany({
     where: and(
       eq(workoutLogs.userId, user.id),
+      gte(workoutLogs.date, startDate),
+      lte(workoutLogs.date, endDate)
     ),
   });
 
-  // Filter logs by date range
-  const logsMap = new Map(
-    logs
-      .filter((log) => log.date >= startDate && log.date <= endDate)
-      .map((log) => [log.date, log])
-  );
+  const logsMap = new Map(logs.map((log) => [log.date, log]));
 
   // Build calendar data
   const calendarData = [];

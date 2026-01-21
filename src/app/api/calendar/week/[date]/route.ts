@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { workoutLogs, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import {
   getWorkoutForDate,
   formatDate,
@@ -50,9 +50,16 @@ export async function GET(
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
 
-  // Get all workout logs for this week
+  const weekStartStr = formatDate(weekStart);
+  const weekEndStr = formatDate(weekEnd);
+
+  // Get workout logs for this week only (not all logs)
   const logs = await db.query.workoutLogs.findMany({
-    where: eq(workoutLogs.userId, user.id),
+    where: and(
+      eq(workoutLogs.userId, user.id),
+      gte(workoutLogs.date, weekStartStr),
+      lte(workoutLogs.date, weekEndStr)
+    ),
   });
 
   const logsMap = new Map(logs.map((log) => [log.date, log]));
