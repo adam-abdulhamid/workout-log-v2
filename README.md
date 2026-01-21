@@ -227,6 +227,14 @@ Currently, blocks and day templates are global (shared across all users). These 
 - Migrate existing data to be owned by the appropriate user
 - Update `/admin` section to only show user's own blocks/templates
 
+### 4. Habit Tracker Enhancements
+The basic daily habits tracker is implemented with a checklist that resets daily. Future enhancements:
+- Calendar/grid view showing completion history (like GitHub contribution graph)
+- Statistics view (e.g., "18 of last 30 days" for each habit)
+- Habit ordering/reordering
+- Habit streaks and gamification
+- Custom reset time (for night owls)
+
 ## License
 
 MIT

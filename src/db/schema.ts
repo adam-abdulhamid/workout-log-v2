@@ -33,6 +33,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   weightEntries: many(weightEntries),
   injuryEntries: many(injuryEntries),
   feedbackEntries: many(feedbackEntries),
+  habits: many(habits),
+  habitCompletions: many(habitCompletions),
 }));
 
 // ============================================================================
@@ -279,6 +281,66 @@ export const feedbackEntriesRelations = relations(feedbackEntries, ({ one }) => 
 }));
 
 // ============================================================================
+// HABITS
+// ============================================================================
+
+export const habits = pgTable("habits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const habitsRelations = relations(habits, ({ one, many }) => ({
+  user: one(users, {
+    fields: [habits.userId],
+    references: [users.id],
+  }),
+  completions: many(habitCompletions),
+}));
+
+// ============================================================================
+// HABIT COMPLETIONS (Daily completion records)
+// ============================================================================
+
+export const habitCompletions = pgTable(
+  "habit_completions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    habitId: uuid("habit_id")
+      .notNull()
+      .references(() => habits.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    completedAt: timestamp("completed_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("unique_habit_date").on(table.habitId, table.date),
+    index("idx_habit_completions_user_date").on(table.userId, table.date),
+  ]
+);
+
+export const habitCompletionsRelations = relations(
+  habitCompletions,
+  ({ one }) => ({
+    habit: one(habits, {
+      fields: [habitCompletions.habitId],
+      references: [habits.id],
+    }),
+    user: one(users, {
+      fields: [habitCompletions.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+// ============================================================================
 // EXERCISE LOGS (Individual set performance)
 // ============================================================================
 
@@ -416,3 +478,9 @@ export type NewInjuryEntry = typeof injuryEntries.$inferInsert;
 
 export type FeedbackEntry = typeof feedbackEntries.$inferSelect;
 export type NewFeedbackEntry = typeof feedbackEntries.$inferInsert;
+
+export type Habit = typeof habits.$inferSelect;
+export type NewHabit = typeof habits.$inferInsert;
+
+export type HabitCompletion = typeof habitCompletions.$inferSelect;
+export type NewHabitCompletion = typeof habitCompletions.$inferInsert;
