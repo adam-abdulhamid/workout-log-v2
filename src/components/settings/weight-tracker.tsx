@@ -351,8 +351,9 @@ export function WeightTracker() {
                             x2="100"
                             y2={y}
                             stroke="currentColor"
-                            strokeWidth="0.3"
+                            strokeWidth="1"
                             opacity="0.4"
+                            vectorEffect="non-scaling-stroke"
                           />
                         ))}
                       </g>
@@ -366,9 +367,10 @@ export function WeightTracker() {
                           fill="none"
                           stroke="currentColor"
                           className="text-primary"
-                          strokeWidth="0.8"
+                          strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          vectorEffect="non-scaling-stroke"
                         />
                       )}
                     </svg>

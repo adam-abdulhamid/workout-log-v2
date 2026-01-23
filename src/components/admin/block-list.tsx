@@ -157,12 +157,14 @@ export function BlockList() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge variant="outline">{block.exerciseCount} exercises</Badge>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="outline">
+                      {block.exerciseCount} {block.exerciseCount === 1 ? "exercise" : "exercises"}
+                    </Badge>
                     {block.daysUsed.length > 0 && (
-                      <span className="truncate">
+                      <span className="text-xs">
                         Used in: {block.daysUsed.slice(0, 2).join(", ")}
-                        {block.daysUsed.length > 2 && "..."}
+                        {block.daysUsed.length > 2 && ` +${block.daysUsed.length - 2} more`}
                       </span>
                     )}
                   </div>

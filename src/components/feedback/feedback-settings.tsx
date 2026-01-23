@@ -33,8 +33,8 @@ export function FeedbackSettings() {
   if (!isLoaded) return null;
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="space-y-0.5">
+    <div className="flex items-center justify-between gap-4">
+      <div className="space-y-0.5 min-w-0 flex-1">
         <Label htmlFor="feedback-toggle" className="text-sm font-medium">
           Feedback Button
         </Label>
@@ -46,6 +46,7 @@ export function FeedbackSettings() {
         id="feedback-toggle"
         checked={enabled}
         onCheckedChange={setFeedbackEnabled}
+        className="shrink-0"
       />
     </div>
   );

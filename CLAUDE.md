@@ -107,6 +107,23 @@ Required variables are documented in `.env.example`. Copy to `.env.local` for lo
 - Use `cn()` utility for conditional class names
 - Follow existing patterns in the codebase
 
+## Feedback System
+
+Users can submit feedback with screenshots. Query and manage feedback items using the script at `scripts/query-feedback.ts`:
+
+```bash
+# List all feedback items (descriptions and screenshot info)
+export $(grep -v '^#' .env | xargs) && npx tsx scripts/query-feedback.ts
+
+# Save screenshots to view them
+export $(grep -v '^#' .env | xargs) && npx tsx scripts/save-feedback-screenshots.ts
+```
+
+Feedback schema (`feedbackEntries` table):
+- `id`, `userId`, `description`, `screenshot` (base64), `url`, `status` (open/fixed/wont_fix), `createdAt`
+
+To update feedback status after fixing, use the API: `PATCH /api/feedback/[id]` with `{ "status": "fixed" }`
+
 ## Future Improvements
 
 When finishing a task or set of tasks, check the **Future Improvements** section in `README.md` and ask the user if any of those items should be implemented next.

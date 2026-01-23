@@ -158,10 +158,28 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   async function exportBlock() {
     try {
       const res = await fetch(`/api/blocks/${blockId}/export`);
-      if (res.ok) {
-        const data = await res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        alert(`Export failed: ${error.error || "Unknown error"}`);
+        return;
+      }
+      const data = await res.json();
+
+      // Try clipboard API first, fall back to download
+      try {
         await navigator.clipboard.writeText(data.markdown);
         alert("Block exported to clipboard!");
+      } catch (clipboardError) {
+        // Clipboard failed (mobile, no focus, etc.) - download as file instead
+        const blob = new Blob([data.markdown], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${data.blockName || "block"}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error("Failed to export block:", error);

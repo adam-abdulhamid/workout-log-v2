@@ -32,10 +32,10 @@ export function BlockCard({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden py-0">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
+          <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 {isOpen ? (
@@ -60,7 +60,7 @@ export function BlockCard({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <CardContent className="pt-0">
+          <CardContent className="pt-0 pb-6">
             {block.exercises.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 No exercises for this week.
