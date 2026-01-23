@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { workoutLogs, users } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { getWorkoutForDate, formatDate } from "@/lib/workout-cycle";
+import { ensureUserDayTemplates } from "@/lib/user";
 
 export async function GET(
   request: Request,
@@ -32,8 +33,8 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Get all day templates
-  const templates = await db.query.dayTemplates.findMany();
+  // Ensure day templates exist for this user and get them
+  const templates = await ensureUserDayTemplates(user.id);
   const templateMap = new Map(templates.map((t) => [t.dayNumber, t]));
 
   // Get number of days in the month

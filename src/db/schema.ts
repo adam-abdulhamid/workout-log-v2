@@ -29,6 +29,8 @@ export const users = pgTable("users", {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
+  dayTemplates: many(dayTemplates),
+  blocks: many(blocks),
   workoutLogs: many(workoutLogs),
   weightEntries: many(weightEntries),
   injuryEntries: many(injuryEntries),
@@ -41,16 +43,30 @@ export const usersRelations = relations(users, ({ many }) => ({
 // DAY TEMPLATES (7 days of the week)
 // ============================================================================
 
-export const dayTemplates = pgTable("day_templates", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  dayNumber: integer("day_number").notNull().unique(), // 1-7 for Mon-Sun
-  name: text("name").notNull(),
-  description: text("description"),
-  version: integer("version").default(1).notNull(),
-  lastModified: timestamp("last_modified").defaultNow().notNull(),
-});
+export const dayTemplates = pgTable(
+  "day_templates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dayNumber: integer("day_number").notNull(), // 1-7 for Mon-Sun
+    name: text("name").notNull(),
+    description: text("description"),
+    version: integer("version").default(1).notNull(),
+    lastModified: timestamp("last_modified").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("unique_user_day").on(table.userId, table.dayNumber),
+    index("idx_day_templates_user").on(table.userId),
+  ]
+);
 
-export const dayTemplatesRelations = relations(dayTemplates, ({ many }) => ({
+export const dayTemplatesRelations = relations(dayTemplates, ({ one, many }) => ({
+  user: one(users, {
+    fields: [dayTemplates.userId],
+    references: [users.id],
+  }),
   blockAssignments: many(dayTemplateBlocks),
   workoutLogs: many(workoutLogs),
 }));
@@ -59,17 +75,31 @@ export const dayTemplatesRelations = relations(dayTemplates, ({ many }) => ({
 // BLOCKS (Reusable workout components)
 // ============================================================================
 
-export const blocks = pgTable("blocks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull().unique(),
-  description: text("description"),
-  category: text("category"), // strength, pt, cardio, mobility, recovery, rehabilitation, power, accessory
-  version: integer("version").default(1).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastModified: timestamp("last_modified").defaultNow().notNull(),
-});
+export const blocks = pgTable(
+  "blocks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    category: text("category"), // strength, pt, cardio, mobility, recovery, rehabilitation, power, accessory
+    version: integer("version").default(1).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    lastModified: timestamp("last_modified").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("unique_user_block_name").on(table.userId, table.name),
+    index("idx_blocks_user").on(table.userId),
+  ]
+);
 
-export const blocksRelations = relations(blocks, ({ many }) => ({
+export const blocksRelations = relations(blocks, ({ one, many }) => ({
+  user: one(users, {
+    fields: [blocks.userId],
+    references: [users.id],
+  }),
   weeks: many(blockWeeks),
   dayAssignments: many(dayTemplateBlocks),
   noteLogs: many(blockNoteLogs),

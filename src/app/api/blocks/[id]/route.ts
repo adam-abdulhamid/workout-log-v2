@@ -9,6 +9,7 @@ import {
   dayTemplates,
 } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { getUserByClerkId } from "@/lib/user";
 import type { BlockDetail, UpdateBlockPayload } from "@/types/workout";
 
 // GET a block with all 6 weeks and exercises
@@ -16,16 +17,21 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const { id: blockId } = await params;
 
   const block = await db.query.blocks.findFirst({
-    where: eq(blocks.id, blockId),
+    where: and(eq(blocks.id, blockId), eq(blocks.userId, user.id)),
   });
 
   if (!block) {
@@ -70,7 +76,7 @@ export async function GET(
     });
   }
 
-  // Get days that use this block
+  // Get days that use this block (only for user's day templates)
   const daysUsed = await db
     .select({
       dayNumber: dayTemplates.dayNumber,
@@ -78,7 +84,12 @@ export async function GET(
     })
     .from(dayTemplateBlocks)
     .innerJoin(dayTemplates, eq(dayTemplateBlocks.dayTemplateId, dayTemplates.id))
-    .where(eq(dayTemplateBlocks.blockId, block.id));
+    .where(
+      and(
+        eq(dayTemplateBlocks.blockId, block.id),
+        eq(dayTemplates.userId, user.id)
+      )
+    );
 
   const result: BlockDetail = {
     id: block.id,
@@ -99,27 +110,32 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const { id: blockId } = await params;
   const data: UpdateBlockPayload = await request.json();
 
   const block = await db.query.blocks.findFirst({
-    where: eq(blocks.id, blockId),
+    where: and(eq(blocks.id, blockId), eq(blocks.userId, user.id)),
   });
 
   if (!block) {
     return NextResponse.json({ error: "Block not found" }, { status: 404 });
   }
 
-  // Check for duplicate name if name is changing
+  // Check for duplicate name if name is changing (for this user only)
   if (data.name && data.name !== block.name) {
     const existing = await db.query.blocks.findFirst({
-      where: eq(blocks.name, data.name),
+      where: and(eq(blocks.userId, user.id), eq(blocks.name, data.name)),
     });
     if (existing) {
       return NextResponse.json(
@@ -149,27 +165,38 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const { id: blockId } = await params;
 
   const block = await db.query.blocks.findFirst({
-    where: eq(blocks.id, blockId),
+    where: and(eq(blocks.id, blockId), eq(blocks.userId, user.id)),
   });
 
   if (!block) {
     return NextResponse.json({ error: "Block not found" }, { status: 404 });
   }
 
-  // Check if block is used by any day
+  // Check if block is used by any day (for this user's day templates)
   const usageCount = await db
     .select()
     .from(dayTemplateBlocks)
-    .where(eq(dayTemplateBlocks.blockId, blockId));
+    .innerJoin(dayTemplates, eq(dayTemplateBlocks.dayTemplateId, dayTemplates.id))
+    .where(
+      and(
+        eq(dayTemplateBlocks.blockId, blockId),
+        eq(dayTemplates.userId, user.id)
+      )
+    );
 
   if (usageCount.length > 0) {
     return NextResponse.json(

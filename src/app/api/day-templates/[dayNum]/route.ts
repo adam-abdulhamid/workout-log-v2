@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { dayTemplates, dayTemplateBlocks, blocks } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
+import { getUserByClerkId, ensureUserDayTemplates, getUserDayTemplate } from "@/lib/user";
 import type { DayTemplateDetail, UpdateDayTemplatePayload } from "@/types/workout";
 
 // GET a day template with its assigned blocks
@@ -10,10 +11,15 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ dayNum: string }> }
 ) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const { dayNum: dayNumStr } = await params;
@@ -26,9 +32,10 @@ export async function GET(
     );
   }
 
-  const dt = await db.query.dayTemplates.findFirst({
-    where: eq(dayTemplates.dayNumber, dayNum),
-  });
+  // Ensure day templates exist for this user
+  await ensureUserDayTemplates(user.id);
+
+  const dt = await getUserDayTemplate(user.id, dayNum);
 
   if (!dt) {
     return NextResponse.json(
@@ -67,10 +74,15 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ dayNum: string }> }
 ) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const { dayNum: dayNumStr } = await params;
@@ -83,9 +95,10 @@ export async function PUT(
     );
   }
 
-  const dt = await db.query.dayTemplates.findFirst({
-    where: eq(dayTemplates.dayNumber, dayNum),
-  });
+  // Ensure day templates exist for this user
+  await ensureUserDayTemplates(user.id);
+
+  const dt = await getUserDayTemplate(user.id, dayNum);
 
   if (!dt) {
     return NextResponse.json(

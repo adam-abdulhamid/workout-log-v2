@@ -9,17 +9,24 @@ import {
   dayTemplates,
 } from "@/db/schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
+import { getUserByClerkId } from "@/lib/user";
 import type { BlockSummary, CreateBlockPayload } from "@/types/workout";
 
 // GET all blocks with summary info
 export async function GET() {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
   const allBlocks = await db.query.blocks.findMany({
+    where: eq(blocks.userId, user.id),
     orderBy: [asc(blocks.category), asc(blocks.name)],
   });
 
@@ -55,7 +62,7 @@ export async function GET() {
     }
   }
 
-  // Batch load all day assignments
+  // Batch load all day assignments (only for user's day templates)
   const allDayAssignments =
     blockIds.length > 0
       ? await db
@@ -68,7 +75,12 @@ export async function GET() {
             dayTemplates,
             eq(dayTemplateBlocks.dayTemplateId, dayTemplates.id)
           )
-          .where(inArray(dayTemplateBlocks.blockId, blockIds))
+          .where(
+            and(
+              inArray(dayTemplateBlocks.blockId, blockIds),
+              eq(dayTemplates.userId, user.id)
+            )
+          )
       : [];
 
   // Group day assignments by blockId
@@ -102,10 +114,15 @@ export async function GET() {
 
 // POST create a new block
 export async function POST(request: Request) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const data: CreateBlockPayload = await request.json();
@@ -114,9 +131,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
-  // Check for duplicate name
+  // Check for duplicate name (for this user only)
   const existing = await db.query.blocks.findFirst({
-    where: eq(blocks.name, data.name),
+    where: and(eq(blocks.userId, user.id), eq(blocks.name, data.name)),
   });
 
   if (existing) {
@@ -130,6 +147,7 @@ export async function POST(request: Request) {
   const blockResult = await db
     .insert(blocks)
     .values({
+      userId: user.id,
       name: data.name,
       description: data.description || "",
       category: data.category || "strength",

@@ -9,6 +9,7 @@ import {
   getWeekStart,
   parseDate,
 } from "@/lib/workout-cycle";
+import { ensureUserDayTemplates } from "@/lib/user";
 
 export async function GET(
   request: Request,
@@ -39,8 +40,8 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Get all day templates
-  const templates = await db.query.dayTemplates.findMany();
+  // Ensure day templates exist for this user and get them
+  const templates = await ensureUserDayTemplates(user.id);
   const templateMap = new Map(templates.map((t) => [t.dayNumber, t]));
 
   // Get the Monday of this week

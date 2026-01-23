@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import {
-  dayTemplates,
   workoutLogs,
   exerciseLogs,
   blockNoteLogs,
@@ -12,6 +11,7 @@ import {
 } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { getWorkoutForDateString } from "@/lib/workout-cycle";
+import { ensureUserDayTemplates, getUserDayTemplate } from "@/lib/user";
 import type { WorkoutLogPayload } from "@/types/workout";
 
 export async function POST(
@@ -43,13 +43,14 @@ export async function POST(
   // Parse request body
   const data: WorkoutLogPayload = await request.json();
 
+  // Ensure day templates exist for this user
+  await ensureUserDayTemplates(user.id);
+
   // Get workout info for this date
   const workoutInfo = getWorkoutForDateString(dateStr);
 
-  // Get day template
-  const dayTemplate = await db.query.dayTemplates.findFirst({
-    where: eq(dayTemplates.dayNumber, workoutInfo.dayNumber),
-  });
+  // Get day template (user-scoped)
+  const dayTemplate = await getUserDayTemplate(user.id, workoutInfo.dayNumber);
 
   // Get or create workout log
   let workoutLog = await db.query.workoutLogs.findFirst({

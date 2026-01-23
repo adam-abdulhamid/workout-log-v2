@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { getWorkoutForDateString } from "@/lib/workout-cycle";
+import { ensureUserDayTemplates, getUserDayTemplate } from "@/lib/user";
 import type { WorkoutData, WorkoutBlock, WorkoutExercise } from "@/types/workout";
 
 export async function GET(
@@ -42,13 +43,14 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  // Ensure day templates exist for this user
+  await ensureUserDayTemplates(user.id);
+
   // Get workout info for this date
   const workoutInfo = getWorkoutForDateString(dateStr);
 
-  // Get day template
-  const dayTemplate = await db.query.dayTemplates.findFirst({
-    where: eq(dayTemplates.dayNumber, workoutInfo.dayNumber),
-  });
+  // Get day template (user-scoped)
+  const dayTemplate = await getUserDayTemplate(user.id, workoutInfo.dayNumber);
 
   if (!dayTemplate) {
     return NextResponse.json(

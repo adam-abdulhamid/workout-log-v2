@@ -2,20 +2,26 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { dayTemplates, dayTemplateBlocks, blocks } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
+import { getUserByClerkId, ensureUserDayTemplates } from "@/lib/user";
 import type { DayTemplateSummary } from "@/types/workout";
 
 // GET all day templates
 export async function GET() {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const templates = await db.query.dayTemplates.findMany({
-    orderBy: asc(dayTemplates.dayNumber),
-  });
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // Ensure day templates exist for this user
+  const templates = await ensureUserDayTemplates(user.id);
+  templates.sort((a, b) => a.dayNumber - b.dayNumber);
 
   const result: DayTemplateSummary[] = [];
 

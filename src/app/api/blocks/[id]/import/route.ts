@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { blocks, blockWeeks, blockWeekExercises } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { getUserByClerkId } from "@/lib/user";
 
 interface ParsedExercise {
   order: number;
@@ -107,16 +108,21 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { userId } = await auth();
+  const { userId: clerkId } = await auth();
 
-  if (!userId) {
+  if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getUserByClerkId(clerkId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const { id: blockId } = await params;
 
   const block = await db.query.blocks.findFirst({
-    where: eq(blocks.id, blockId),
+    where: and(eq(blocks.id, blockId), eq(blocks.userId, user.id)),
   });
 
   if (!block) {
