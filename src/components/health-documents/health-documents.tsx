@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FileText, Trash2, Upload } from "lucide-react";
+import { FileText, Trash2, Upload, Download } from "lucide-react";
 
 type HealthDocument = {
   id: string;
@@ -296,23 +296,58 @@ export function HealthDocuments() {
                     formatDate(selectedDocument.documentDate)}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isSaving}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedDocument) {
+                      const link = document.createElement("a");
+                      link.href = selectedDocument.pdfData;
+                      link.download = `${selectedDocument.title}.pdf`;
+                      link.click();
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isSaving}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </DialogTitle>
           </DialogHeader>
           {selectedDocument && (
-            <div className="flex-1 overflow-hidden min-h-0 mt-4">
-              <iframe
-                src={selectedDocument.pdfData}
+            <div className="flex-1 overflow-auto min-h-0 mt-4">
+              <object
+                data={selectedDocument.pdfData}
+                type="application/pdf"
                 className="w-full h-full border rounded"
                 title={selectedDocument.title}
-              />
+              >
+                <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Your browser cannot display PDFs. Please download the file to
+                    view it.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = selectedDocument.pdfData;
+                      link.download = `${selectedDocument.title}.pdf`;
+                      link.click();
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+              </object>
             </div>
           )}
         </DialogContent>
