@@ -220,14 +220,7 @@ The basic injury log (free-form entries with chronological view) is implemented.
 - Ability to upload supporting documents (MRIs, X-rays, radiology reports)
 - Search/filter entries
 
-### 3. User-Scoped Blocks and Day Templates
-Currently, blocks and day templates are global (shared across all users). These should be made user-scoped:
-- Add `userId` to `blocks` and `dayTemplates` tables
-- Update queries to filter by current user
-- Migrate existing data to be owned by the appropriate user
-- Update `/admin` section to only show user's own blocks/templates
-
-### 4. Habit Tracker Enhancements
+### 3. Habit Tracker Enhancements
 The basic daily habits tracker is implemented with a checklist that resets daily. Future enhancements:
 - Calendar/grid view showing completion history (like GitHub contribution graph)
 - Statistics view (e.g., "18 of last 30 days" for each habit)

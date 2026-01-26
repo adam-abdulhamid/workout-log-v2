@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Calendar, Blocks, CalendarDays, Settings, Dumbbell, LineChart, HeartPulse, CheckSquare } from "lucide-react";
+import { Menu, X, Calendar, Blocks, CalendarDays, Settings, Dumbbell, LineChart, HeartPulse, CheckSquare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FeedbackNavItem } from "@/components/feedback/feedback-nav-item";
@@ -15,6 +15,7 @@ const navigation = [
   { name: "Block Library", href: "/admin/blocks", icon: Blocks },
   { name: "Weight Tracker", href: "/dashboard/weight-tracker", icon: LineChart },
   { name: "Injury Log", href: "/dashboard/injury-log", icon: HeartPulse },
+  { name: "Health Docs", href: "/dashboard/health-documents", icon: FileText },
   { name: "Habits", href: "/dashboard/habits", icon: CheckSquare },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

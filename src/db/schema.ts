@@ -37,6 +37,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   feedbackEntries: many(feedbackEntries),
   habits: many(habits),
   habitCompletions: many(habitCompletions),
+  healthDocuments: many(healthDocuments),
 }));
 
 // ============================================================================
@@ -311,6 +312,36 @@ export const feedbackEntriesRelations = relations(feedbackEntries, ({ one }) => 
 }));
 
 // ============================================================================
+// HEALTH DOCUMENTS (DEXA scans, VO2 max tests, etc.)
+// ============================================================================
+
+export const healthDocuments = pgTable(
+  "health_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    documentDate: timestamp("document_date").notNull(),
+    pdfData: text("pdf_data").notNull(), // base64 encoded PDF
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [index("idx_health_documents_user").on(table.userId)]
+);
+
+export const healthDocumentsRelations = relations(
+  healthDocuments,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [healthDocuments.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+// ============================================================================
 // HABITS
 // ============================================================================
 
@@ -514,3 +545,6 @@ export type NewHabit = typeof habits.$inferInsert;
 
 export type HabitCompletion = typeof habitCompletions.$inferSelect;
 export type NewHabitCompletion = typeof habitCompletions.$inferInsert;
+
+export type HealthDocument = typeof healthDocuments.$inferSelect;
+export type NewHealthDocument = typeof healthDocuments.$inferInsert;
