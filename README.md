@@ -58,8 +58,10 @@ pnpm install
 Copy the example environment file and fill in your values:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
+
+**Important:** This project uses `.env` (not `.env.local`). Make sure to add `.env` to your `.gitignore` to avoid committing secrets.
 
 Required environment variables:
 
@@ -206,21 +208,13 @@ templates/
 
 The following features and improvements are planned for future development:
 
-### 1. Health Document Uploads (DEXA / VO2 Max)
-Add a section for uploading and viewing PDF documents of health assessments:
-- DEXA scan results
-- VO2 max test results
-- Simple upload and view functionality
-- PDF rendered inline on the site for easy viewing
-- No charts or data extraction needed initially
-
-### 2. Injury Log Enhancements
+### 1. Injury Log Enhancements
 The basic injury log (free-form entries with chronological view) is implemented. Future enhancements:
 - AI-powered summaries of injury progression
 - Ability to upload supporting documents (MRIs, X-rays, radiology reports)
 - Search/filter entries
 
-### 3. Habit Tracker Enhancements
+### 2. Habit Tracker Enhancements
 The basic daily habits tracker is implemented with a checklist that resets daily. Future enhancements:
 - Calendar/grid view showing completion history (like GitHub contribution graph)
 - Statistics view (e.g., "18 of last 30 days" for each habit)
