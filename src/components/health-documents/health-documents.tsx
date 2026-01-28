@@ -35,6 +35,18 @@ function formatDate(dateStr: string) {
   });
 }
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64Data] = dataUrl.split(",");
+  const mimeMatch = header.match(/:(.*?);/);
+  const mimeType = mimeMatch ? mimeMatch[1] : "application/pdf";
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
 export function HealthDocuments() {
   const [documents, setDocuments] = useState<HealthDocument[]>([]);
   const [newTitle, setNewTitle] = useState("");
@@ -46,6 +58,7 @@ export function HealthDocuments() {
     useState<HealthDocument | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true);
@@ -159,9 +172,18 @@ export function HealthDocuments() {
 
   function openDocument(document: HealthDocument) {
     setSelectedDocument(document);
+    // Convert base64 data URL to blob URL for better browser compatibility
+    const blob = dataUrlToBlob(document.pdfData);
+    const blobUrl = URL.createObjectURL(blob);
+    setPdfBlobUrl(blobUrl);
   }
 
   function closeDialog() {
+    // Revoke the blob URL to free memory
+    if (pdfBlobUrl) {
+      URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(null);
+    }
     setSelectedDocument(null);
   }
 
@@ -322,32 +344,13 @@ export function HealthDocuments() {
               </div>
             </DialogTitle>
           </DialogHeader>
-          {selectedDocument && (
+          {selectedDocument && pdfBlobUrl && (
             <div className="flex-1 overflow-auto min-h-0 mt-4">
-              <object
-                data={selectedDocument.pdfData}
-                type="application/pdf"
+              <iframe
+                src={pdfBlobUrl}
                 className="w-full h-full border rounded"
                 title={selectedDocument.title}
-              >
-                <div className="flex flex-col items-center justify-center p-8 space-y-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Your browser cannot display PDFs. Please download the file to
-                    view it.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = selectedDocument.pdfData;
-                      link.download = `${selectedDocument.title}.pdf`;
-                      link.click();
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download PDF
-                  </Button>
-                </div>
-              </object>
+              />
             </div>
           )}
         </DialogContent>

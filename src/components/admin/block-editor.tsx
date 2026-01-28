@@ -287,29 +287,43 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/admin/blocks")}
-            className="mb-2 -ml-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Blocks
-          </Button>
-          <h1 className="text-2xl font-bold">Edit Block: {block.name}</h1>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/admin/blocks")}
+              className="mb-2 -ml-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Blocks
+            </Button>
+            <h1 className="text-2xl font-bold">Edit Block: {block.name}</h1>
+          </div>
+          <div className="hidden sm:flex gap-2 flex-shrink-0">
+            <Button variant="outline" onClick={exportBlock}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportBlock}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button onClick={saveBlock} disabled={saving}>
+        <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 sm:hidden">
+            <Button variant="outline" size="sm" onClick={exportBlock}>
+              <Download className="h-4 w-4 mr-1" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" />
+              Import
+            </Button>
+          </div>
+          <Button onClick={saveBlock} disabled={saving} className="sm:ml-auto">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>

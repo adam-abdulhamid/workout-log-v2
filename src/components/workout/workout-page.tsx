@@ -22,6 +22,7 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
   const [workout, setWorkout] = useState<WorkoutData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Exercise logs indexed by exercise ID
@@ -112,10 +113,14 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
       });
 
       if (res.ok) {
-        // Reload workout to get updated state
-        await loadWorkout();
         if (markComplete) {
+          // Reload workout to get updated state when completing
+          await loadWorkout();
           setIsEditing(false);
+        } else {
+          // Show success indicator without reloading
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 2000);
         }
       }
     } catch (error) {
@@ -217,9 +222,19 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
             variant="outline"
             onClick={() => saveWorkout(false)}
             disabled={saving}
+            className={saveSuccess ? "border-green-500 text-green-500" : ""}
           >
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Progress"}
+            {saveSuccess ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Saved
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? "Saving..." : "Save Progress"}
+              </>
+            )}
           </Button>
           <Button
             onClick={() => saveWorkout(true)}
