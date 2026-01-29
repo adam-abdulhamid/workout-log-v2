@@ -222,6 +222,13 @@ The basic daily habits tracker is implemented with a checklist that resets daily
 - Habit streaks and gamification
 - Custom reset time (for night owls)
 
+### 3. Visual Regression Testing
+Build a test framework for capturing and comparing UI screenshots across mobile and desktop viewports:
+- Automated screenshot capture for key pages/components
+- Side-by-side comparison of mobile vs desktop layouts
+- Visual diff detection for UI regressions
+- Integration with CI/CD pipeline
+
 ## License
 
 MIT
