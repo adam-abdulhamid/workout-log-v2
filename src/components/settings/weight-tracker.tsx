@@ -399,6 +399,9 @@ export function WeightTracker() {
                       {dateRange.start.toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
+                        ...(range === "all" || dateRange.start.getFullYear() !== dateRange.end.getFullYear()
+                          ? { year: "numeric" }
+                          : {}),
                       })}
                     </span>
                     <span className="text-muted-foreground/60">
@@ -408,6 +411,9 @@ export function WeightTracker() {
                       {dateRange.end.toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
+                        ...(range === "all" || dateRange.start.getFullYear() !== dateRange.end.getFullYear()
+                          ? { year: "numeric" }
+                          : {}),
                       })}
                     </span>
                   </div>

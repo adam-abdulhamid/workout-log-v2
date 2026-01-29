@@ -215,37 +215,41 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
         ))}
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Fixed at bottom */}
       {(isEditing || !workout.isCompleted) && (
-        <div className="flex items-center justify-end gap-3 sticky bottom-4 bg-background p-4 border-t border-border -mx-4 mt-8">
-          <Button
-            variant="outline"
-            onClick={() => saveWorkout(false)}
-            disabled={saving}
-            className={saveSuccess ? "border-green-500 text-green-500" : ""}
-          >
-            {saveSuccess ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                Saved
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save Progress"}
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={() => saveWorkout(true)}
-            disabled={saving}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Check className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Mark Complete"}
-          </Button>
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border p-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => saveWorkout(false)}
+              disabled={saving}
+              className={`min-w-[140px] ${saveSuccess ? "border-green-500 text-green-500" : ""}`}
+            >
+              {saveSuccess ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? "Saving..." : "Save Progress"}
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => saveWorkout(true)}
+              disabled={saving}
+              className="min-w-[150px] bg-green-600 hover:bg-green-700"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              {saving ? "Saving..." : "Mark Complete"}
+            </Button>
+          </div>
         </div>
       )}
+      {/* Spacer for fixed bottom bar */}
+      {(isEditing || !workout.isCompleted) && <div className="h-20" />}
     </div>
   );
 }

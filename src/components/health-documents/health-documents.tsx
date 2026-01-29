@@ -382,12 +382,27 @@ export function HealthDocuments() {
               <div className="text-muted-foreground">Loading document...</div>
             </div>
           ) : selectedDocument && pdfBlobUrl ? (
-            <div className="flex-1 overflow-auto min-h-0 mt-4">
-              <iframe
-                src={pdfBlobUrl}
-                className="w-full h-full border rounded"
-                title={selectedDocument.title}
-              />
+            <div className="flex-1 flex flex-col min-h-0 mt-4">
+              {/* Mobile-friendly fallback button */}
+              <div className="md:hidden flex items-center justify-center gap-2 mb-4 p-4 border rounded bg-muted/30">
+                <span className="text-sm text-muted-foreground">
+                  PDF may not display on mobile.
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(pdfBlobUrl, "_blank")}
+                >
+                  Open PDF
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto min-h-0">
+                <iframe
+                  src={pdfBlobUrl}
+                  className="w-full h-full border rounded min-h-[400px] md:min-h-0"
+                  title={selectedDocument.title}
+                />
+              </div>
             </div>
           ) : null}
         </DialogContent>

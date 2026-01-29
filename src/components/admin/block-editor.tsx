@@ -285,47 +285,36 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-2 sm:px-0">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/admin/blocks")}
-              className="mb-2 -ml-2"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Blocks
-            </Button>
-            <h1 className="text-2xl font-bold">Edit Block: {block.name}</h1>
-          </div>
-          <div className="hidden sm:flex gap-2 flex-shrink-0">
-            <Button variant="outline" onClick={exportBlock}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-          </div>
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/admin/blocks")}
+            className="mb-2 -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Blocks
+          </Button>
+          <h1 className="text-xl sm:text-2xl font-bold break-words">
+            Edit Block: {block.name}
+          </h1>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <div className="flex gap-2 sm:hidden">
-            <Button variant="outline" size="sm" onClick={exportBlock}>
-              <Download className="h-4 w-4 mr-1" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-1" />
-              Import
-            </Button>
-          </div>
-          <Button onClick={saveBlock} disabled={saving} className="sm:ml-auto">
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Changes"}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={exportBlock}>
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Import</span>
+          </Button>
+          <Button onClick={saveBlock} disabled={saving} size="sm" className="ml-auto">
+            <Save className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{saving ? "Saving..." : "Save Changes"}</span>
+            <span className="sm:hidden">{saving ? "..." : "Save"}</span>
           </Button>
         </div>
       </div>
@@ -416,111 +405,113 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
                   />
                 </div>
 
-                {/* Exercises table */}
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">#</TableHead>
-                      <TableHead>Exercise</TableHead>
-                      <TableHead className="w-16">Sets</TableHead>
-                      <TableHead className="w-20">Reps</TableHead>
-                      <TableHead className="w-20">Tempo</TableHead>
-                      <TableHead className="w-24">Rest</TableHead>
-                      <TableHead className="w-8"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(weekExercises[weekNum] || []).map((exercise, index) => (
-                      <TableRow key={exercise.id}>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell>
-                          <Input
-                            value={exercise.name}
-                            onChange={(e) =>
-                              updateExercise(
-                                weekNum,
-                                exercise.id,
-                                "name",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Exercise name"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={exercise.sets ?? ""}
-                            onChange={(e) =>
-                              updateExercise(
-                                weekNum,
-                                exercise.id,
-                                "sets",
-                                e.target.value ? parseInt(e.target.value) : null
-                              )
-                            }
-                            className="w-16"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={exercise.reps ?? ""}
-                            onChange={(e) =>
-                              updateExercise(
-                                weekNum,
-                                exercise.id,
-                                "reps",
-                                e.target.value
-                              )
-                            }
-                            placeholder="8-10"
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={exercise.tempo ?? ""}
-                            onChange={(e) =>
-                              updateExercise(
-                                weekNum,
-                                exercise.id,
-                                "tempo",
-                                e.target.value
-                              )
-                            }
-                            placeholder="3010"
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={exercise.rest ?? ""}
-                            onChange={(e) =>
-                              updateExercise(
-                                weekNum,
-                                exercise.id,
-                                "rest",
-                                e.target.value
-                              )
-                            }
-                            placeholder="2:00"
-                            className="w-24"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => removeExercise(weekNum, exercise.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                {/* Exercises table - horizontally scrollable on mobile */}
+                <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                  <Table className="min-w-[640px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead className="min-w-[150px]">Exercise</TableHead>
+                        <TableHead className="w-16">Sets</TableHead>
+                        <TableHead className="w-20">Reps</TableHead>
+                        <TableHead className="w-20">Tempo</TableHead>
+                        <TableHead className="w-24">Rest</TableHead>
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {(weekExercises[weekNum] || []).map((exercise, index) => (
+                        <TableRow key={exercise.id}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>
+                            <Input
+                              value={exercise.name}
+                              onChange={(e) =>
+                                updateExercise(
+                                  weekNum,
+                                  exercise.id,
+                                  "name",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Exercise name"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={exercise.sets ?? ""}
+                              onChange={(e) =>
+                                updateExercise(
+                                  weekNum,
+                                  exercise.id,
+                                  "sets",
+                                  e.target.value ? parseInt(e.target.value) : null
+                                )
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={exercise.reps ?? ""}
+                              onChange={(e) =>
+                                updateExercise(
+                                  weekNum,
+                                  exercise.id,
+                                  "reps",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="8-10"
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={exercise.tempo ?? ""}
+                              onChange={(e) =>
+                                updateExercise(
+                                  weekNum,
+                                  exercise.id,
+                                  "tempo",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="3010"
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={exercise.rest ?? ""}
+                              onChange={(e) =>
+                                updateExercise(
+                                  weekNum,
+                                  exercise.id,
+                                  "rest",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="2:00"
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => removeExercise(weekNum, exercise.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 <Button
                   variant="outline"

@@ -37,15 +37,58 @@ export function FeedbackButton() {
     setIsCapturing(true);
 
     try {
-      const dataUrl = await domToPng(document.body, {
-        scale: window.devicePixelRatio > 1 ? 0.5 : 1,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        style: {
-          transform: `translate(-${window.scrollX}px, -${window.scrollY}px)`,
+      // Get the full page dimensions
+      const fullWidth = document.documentElement.scrollWidth;
+      const fullHeight = document.documentElement.scrollHeight;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
+      // Capture the full document
+      const fullDataUrl = await domToPng(document.documentElement, {
+        scale: 1,
+        width: fullWidth,
+        height: fullHeight,
+        filter: (node) => {
+          // Skip script tags and hidden elements
+          if (node instanceof Element) {
+            const tagName = node.tagName.toLowerCase();
+            if (tagName === "script" || tagName === "noscript") {
+              return false;
+            }
+          }
+          return true;
         },
       });
 
+      // Create a canvas to crop to the visible viewport
+      const img = new Image();
+      img.src = fullDataUrl;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = viewportWidth;
+      canvas.height = viewportHeight;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        // Draw only the visible portion
+        ctx.drawImage(
+          img,
+          scrollX,
+          scrollY,
+          viewportWidth,
+          viewportHeight,
+          0,
+          0,
+          viewportWidth,
+          viewportHeight
+        );
+      }
+
+      const dataUrl = canvas.toDataURL("image/png", 0.8);
       setScreenshot(dataUrl);
       setCapturedUrl(window.location.href);
       setModalOpen(true);
