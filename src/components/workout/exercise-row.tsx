@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SetInput } from "./set-input";
@@ -15,7 +15,7 @@ interface ExerciseRowProps {
   disabled?: boolean;
 }
 
-export function ExerciseRow({
+export const ExerciseRow = memo(function ExerciseRow({
   exercise,
   logs,
   onLogChange,
@@ -126,4 +126,4 @@ export function ExerciseRow({
       />
     </div>
   );
-}
+});

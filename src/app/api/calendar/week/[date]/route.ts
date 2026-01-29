@@ -104,9 +104,16 @@ export async function GET(
     });
   }
 
-  return NextResponse.json({
-    weekStart: formatDate(weekStart),
-    weekEnd: formatDate(weekEnd),
-    days: weekData,
-  });
+  return NextResponse.json(
+    {
+      weekStart: formatDate(weekStart),
+      weekEnd: formatDate(weekEnd),
+      days: weekData,
+    },
+    {
+      headers: {
+        "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+      },
+    }
+  );
 }

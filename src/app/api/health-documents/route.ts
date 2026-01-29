@@ -19,12 +19,24 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const documents = await db.query.healthDocuments.findMany({
-    where: eq(healthDocuments.userId, user.id),
-    orderBy: desc(healthDocuments.documentDate),
-  });
+  // Only select metadata columns, exclude pdfData to avoid sending multi-MB payloads
+  const documents = await db
+    .select({
+      id: healthDocuments.id,
+      title: healthDocuments.title,
+      documentDate: healthDocuments.documentDate,
+      createdAt: healthDocuments.createdAt,
+      updatedAt: healthDocuments.updatedAt,
+    })
+    .from(healthDocuments)
+    .where(eq(healthDocuments.userId, user.id))
+    .orderBy(desc(healthDocuments.documentDate));
 
-  return NextResponse.json(documents);
+  return NextResponse.json(documents, {
+    headers: {
+      "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+    },
+  });
 }
 
 export async function POST(request: Request) {

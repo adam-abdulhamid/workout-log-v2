@@ -75,5 +75,9 @@ export async function GET(
     });
   }
 
-  return NextResponse.json(calendarData);
+  return NextResponse.json(calendarData, {
+    headers: {
+      "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+    },
+  });
 }

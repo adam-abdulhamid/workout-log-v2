@@ -328,7 +328,10 @@ export const healthDocuments = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [index("idx_health_documents_user").on(table.userId)]
+  (table) => [
+    index("idx_health_documents_user").on(table.userId),
+    index("idx_health_documents_user_date").on(table.userId, table.documentDate),
+  ]
 );
 
 export const healthDocumentsRelations = relations(
@@ -345,16 +348,20 @@ export const healthDocumentsRelations = relations(
 // HABITS
 // ============================================================================
 
-export const habits = pgTable("habits", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const habits = pgTable(
+  "habits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [index("idx_habits_user_active").on(table.userId, table.isActive)]
+);
 
 export const habitsRelations = relations(habits, ({ one, many }) => ({
   user: one(users, {

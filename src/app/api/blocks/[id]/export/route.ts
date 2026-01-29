@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { blocks, blockWeeks, blockWeekExercises } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { getUserByClerkId } from "@/lib/user";
 
 // GET export block as markdown
@@ -31,6 +31,30 @@ export async function GET(
     return NextResponse.json({ error: "Block not found" }, { status: 404 });
   }
 
+  // Batch load all weeks and exercises (2 queries instead of 12)
+  const allBlockWeeks = await db.query.blockWeeks.findMany({
+    where: eq(blockWeeks.blockId, block.id),
+  });
+
+  const blockWeekIds = allBlockWeeks.map((w) => w.id);
+  const allExercises = blockWeekIds.length > 0
+    ? await db.query.blockWeekExercises.findMany({
+        where: and(
+          inArray(blockWeekExercises.blockWeekId, blockWeekIds),
+          eq(blockWeekExercises.isActive, true)
+        ),
+        orderBy: asc(blockWeekExercises.order),
+      })
+    : [];
+
+  // Group exercises by week
+  const exercisesByWeekId = new Map<string, typeof allExercises>();
+  for (const ex of allExercises) {
+    const list = exercisesByWeekId.get(ex.blockWeekId) || [];
+    list.push(ex);
+    exercisesByWeekId.set(ex.blockWeekId, list);
+  }
+
   const lines: string[] = [
     `# Block: ${block.name}`,
     "",
@@ -40,12 +64,7 @@ export async function GET(
   ];
 
   for (let weekNum = 1; weekNum <= 6; weekNum++) {
-    const blockWeek = await db.query.blockWeeks.findFirst({
-      where: and(
-        eq(blockWeeks.blockId, block.id),
-        eq(blockWeeks.weekNumber, weekNum)
-      ),
-    });
+    const blockWeek = allBlockWeeks.find((w) => w.weekNumber === weekNum);
 
     lines.push(`## Week ${weekNum}`);
 
@@ -58,14 +77,7 @@ export async function GET(
     lines.push("|---|----------|------|------|-------|------|-------|");
 
     if (blockWeek) {
-      const exercises = await db.query.blockWeekExercises.findMany({
-        where: and(
-          eq(blockWeekExercises.blockWeekId, blockWeek.id),
-          eq(blockWeekExercises.isActive, true)
-        ),
-        orderBy: asc(blockWeekExercises.order),
-      });
-
+      const exercises = exercisesByWeekId.get(blockWeek.id) || [];
       for (const ex of exercises) {
         lines.push(
           `| ${ex.order} | ${ex.name} | ${ex.sets || ""} | ${ex.reps || ""} | ${

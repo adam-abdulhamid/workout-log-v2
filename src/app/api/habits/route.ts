@@ -24,7 +24,11 @@ export async function GET() {
     orderBy: habits.createdAt,
   });
 
-  return NextResponse.json(userHabits);
+  return NextResponse.json(userHabits, {
+    headers: {
+      "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+    },
+  });
 }
 
 export async function POST(request: Request) {

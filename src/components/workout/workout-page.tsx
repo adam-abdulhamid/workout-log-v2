@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Save, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,22 +64,22 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
     }
   }
 
-  function handleExerciseLogsChange(
-    exerciseId: string,
-    logs: ExerciseLogEntry[]
-  ) {
-    setExerciseLogs((prev) => ({
-      ...prev,
-      [exerciseId]: logs,
-    }));
-  }
+  const handleExerciseLogsChange = useCallback(
+    (exerciseId: string, logs: ExerciseLogEntry[]) => {
+      setExerciseLogs((prev) => ({
+        ...prev,
+        [exerciseId]: logs,
+      }));
+    },
+    []
+  );
 
-  function handleBlockNoteChange(blockId: string, note: string) {
+  const handleBlockNoteChange = useCallback((blockId: string, note: string) => {
     setBlockNotes((prev) => ({
       ...prev,
       [blockId]: note,
     }));
-  }
+  }, []);
 
   async function saveWorkout(markComplete: boolean) {
     if (!workout) return;
@@ -208,7 +208,7 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
             exerciseLogs={exerciseLogs}
             blockNote={blockNotes[block.id] || ""}
             onExerciseLogsChange={handleExerciseLogsChange}
-            onBlockNoteChange={(note) => handleBlockNoteChange(block.id, note)}
+            onBlockNoteChange={handleBlockNoteChange}
             disabled={disabled}
             defaultOpen={index === 0}
           />

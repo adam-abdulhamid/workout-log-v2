@@ -8,7 +8,7 @@ import {
   dayTemplateBlocks,
   dayTemplates,
 } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { getUserByClerkId } from "@/lib/user";
 import type { BlockDetail, UpdateBlockPayload } from "@/types/workout";
 
@@ -38,25 +38,36 @@ export async function GET(
     return NextResponse.json({ error: "Block not found" }, { status: 404 });
   }
 
-  // Get all 6 weeks
+  // Batch load all weeks for this block (1 query instead of 6)
+  const allBlockWeeks = await db.query.blockWeeks.findMany({
+    where: eq(blockWeeks.blockId, block.id),
+  });
+
+  // Batch load all exercises for all weeks (1 query instead of 6)
+  const blockWeekIds = allBlockWeeks.map((w) => w.id);
+  const allExercises = blockWeekIds.length > 0
+    ? await db.query.blockWeekExercises.findMany({
+        where: and(
+          inArray(blockWeekExercises.blockWeekId, blockWeekIds),
+          eq(blockWeekExercises.isActive, true)
+        ),
+        orderBy: asc(blockWeekExercises.order),
+      })
+    : [];
+
+  // Group exercises by week
+  const exercisesByWeekId = new Map<string, typeof allExercises>();
+  for (const ex of allExercises) {
+    const list = exercisesByWeekId.get(ex.blockWeekId) || [];
+    list.push(ex);
+    exercisesByWeekId.set(ex.blockWeekId, list);
+  }
+
+  // Build weeks array
   const weeks = [];
   for (let weekNum = 1; weekNum <= 6; weekNum++) {
-    const blockWeek = await db.query.blockWeeks.findFirst({
-      where: and(
-        eq(blockWeeks.blockId, block.id),
-        eq(blockWeeks.weekNumber, weekNum)
-      ),
-    });
-
-    const exercises = blockWeek
-      ? await db.query.blockWeekExercises.findMany({
-          where: and(
-            eq(blockWeekExercises.blockWeekId, blockWeek.id),
-            eq(blockWeekExercises.isActive, true)
-          ),
-          orderBy: asc(blockWeekExercises.order),
-        })
-      : [];
+    const blockWeek = allBlockWeeks.find((w) => w.weekNumber === weekNum);
+    const exercises = blockWeek ? exercisesByWeekId.get(blockWeek.id) || [] : [];
 
     weeks.push({
       weekNumber: weekNum,
@@ -102,7 +113,11 @@ export async function GET(
     daysUsed,
   };
 
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    headers: {
+      "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+    },
+  });
 }
 
 // PUT update block metadata

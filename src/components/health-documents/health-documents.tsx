@@ -18,13 +18,16 @@ import {
 } from "@/components/ui/dialog";
 import { FileText, Trash2, Upload, Download } from "lucide-react";
 
-type HealthDocument = {
+type HealthDocumentListItem = {
   id: string;
   title: string;
   documentDate: string;
-  pdfData: string;
   createdAt: string;
   updatedAt: string;
+};
+
+type HealthDocument = HealthDocumentListItem & {
+  pdfData: string;
 };
 
 function formatDate(dateStr: string) {
@@ -48,14 +51,17 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 export function HealthDocuments() {
-  const [documents, setDocuments] = useState<HealthDocument[]>([]);
+  const [documents, setDocuments] = useState<HealthDocumentListItem[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newDocumentDate, setNewDocumentDate] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] =
     useState<HealthDocument | null>(null);
+  const [openingDocument, setOpeningDocument] =
+    useState<HealthDocumentListItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
@@ -68,7 +74,7 @@ export function HealthDocuments() {
       if (!res.ok) {
         throw new Error("Failed to load documents.");
       }
-      const data = (await res.json()) as HealthDocument[];
+      const data = (await res.json()) as HealthDocumentListItem[];
       setDocuments(data ?? []);
     } catch (err) {
       setError(
@@ -82,6 +88,15 @@ export function HealthDocuments() {
   useEffect(() => {
     void loadDocuments();
   }, [loadDocuments]);
+
+  // Cleanup blob URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [pdfBlobUrl]);
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -170,12 +185,28 @@ export function HealthDocuments() {
     }
   }
 
-  function openDocument(document: HealthDocument) {
-    setSelectedDocument(document);
-    // Convert base64 data URL to blob URL for better browser compatibility
-    const blob = dataUrlToBlob(document.pdfData);
-    const blobUrl = URL.createObjectURL(blob);
-    setPdfBlobUrl(blobUrl);
+  async function openDocument(documentItem: HealthDocumentListItem) {
+    setOpeningDocument(documentItem);
+    setIsLoadingDocument(true);
+    setError(null);
+    try {
+      // Fetch full document data including PDF
+      const res = await fetch(`/api/health-documents/${documentItem.id}`);
+      if (!res.ok) {
+        throw new Error("Failed to load document.");
+      }
+      const fullDocument = (await res.json()) as HealthDocument;
+      setSelectedDocument(fullDocument);
+      // Convert base64 data URL to blob URL for better browser compatibility
+      const blob = dataUrlToBlob(fullDocument.pdfData);
+      const blobUrl = URL.createObjectURL(blob);
+      setPdfBlobUrl(blobUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load document.");
+      setOpeningDocument(null);
+    } finally {
+      setIsLoadingDocument(false);
+    }
   }
 
   function closeDialog() {
@@ -185,6 +216,7 @@ export function HealthDocuments() {
       setPdfBlobUrl(null);
     }
     setSelectedDocument(null);
+    setOpeningDocument(null);
   }
 
   return (
@@ -305,27 +337,28 @@ export function HealthDocuments() {
       </Card>
 
       <Dialog
-        open={!!selectedDocument}
+        open={!!selectedDocument || !!openingDocument}
         onOpenChange={(open) => !open && closeDialog()}
       >
         <DialogContent className="max-w-[95vw] md:max-w-6xl lg:max-w-7xl h-[90vh] flex flex-col p-4 md:p-6">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center justify-between">
               <div>
-                <div>{selectedDocument?.title}</div>
+                <div>{selectedDocument?.title || openingDocument?.title}</div>
                 <div className="text-sm font-normal text-muted-foreground mt-1">
-                  {selectedDocument &&
-                    formatDate(selectedDocument.documentDate)}
+                  {(selectedDocument || openingDocument) &&
+                    formatDate((selectedDocument || openingDocument)!.documentDate)}
                 </div>
               </div>
               <div className="flex gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={!pdfBlobUrl}
                   onClick={() => {
-                    if (selectedDocument) {
+                    if (selectedDocument && pdfBlobUrl) {
                       const link = document.createElement("a");
-                      link.href = selectedDocument.pdfData;
+                      link.href = pdfBlobUrl;
                       link.download = `${selectedDocument.title}.pdf`;
                       link.click();
                     }
@@ -344,7 +377,11 @@ export function HealthDocuments() {
               </div>
             </DialogTitle>
           </DialogHeader>
-          {selectedDocument && pdfBlobUrl && (
+          {isLoadingDocument ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-muted-foreground">Loading document...</div>
+            </div>
+          ) : selectedDocument && pdfBlobUrl ? (
             <div className="flex-1 overflow-auto min-h-0 mt-4">
               <iframe
                 src={pdfBlobUrl}
@@ -352,7 +389,7 @@ export function HealthDocuments() {
                 title={selectedDocument.title}
               />
             </div>
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

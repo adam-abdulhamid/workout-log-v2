@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +15,12 @@ interface BlockCardProps {
   exerciseLogs: Record<string, ExerciseLogEntry[]>;
   blockNote: string;
   onExerciseLogsChange: (exerciseId: string, logs: ExerciseLogEntry[]) => void;
-  onBlockNoteChange: (note: string) => void;
+  onBlockNoteChange: (blockId: string, note: string) => void;
   disabled?: boolean;
   defaultOpen?: boolean;
 }
 
-export function BlockCard({
+export const BlockCard = memo(function BlockCard({
   block,
   exerciseLogs,
   blockNote,
@@ -86,7 +86,7 @@ export function BlockCard({
                   <Textarea
                     placeholder="Add notes for this block..."
                     value={blockNote}
-                    onChange={(e) => onBlockNoteChange(e.target.value)}
+                    onChange={(e) => onBlockNoteChange(block.id, e.target.value)}
                     disabled={disabled}
                     className={cn("resize-none", disabled && "opacity-60")}
                     rows={2}
@@ -99,4 +99,4 @@ export function BlockCard({
       </Collapsible>
     </Card>
   );
-}
+});

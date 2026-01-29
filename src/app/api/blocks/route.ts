@@ -109,7 +109,11 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    headers: {
+      "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+    },
+  });
 }
 
 // POST create a new block
