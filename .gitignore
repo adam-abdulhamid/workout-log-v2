@@ -44,3 +44,9 @@ next-env.d.ts
 # claude code
 .claude/*
 !.claude/skills/
+
+# playwright
+/e2e/.auth/
+/e2e/playwright-report/
+/e2e/test-results/
+/e2e/screenshots/

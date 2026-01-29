@@ -19,7 +19,7 @@ This is a Next.js starter kit template for building web applications. It's desig
 - **Styling:** Tailwind CSS v4 + shadcn/ui
 - **Email:** Resend
 - **Analytics:** PostHog (optional)
-- **Testing:** Vitest
+- **Testing:** Vitest (unit), Playwright (E2E)
 - **Deployment:** Docker on VPS
 
 ### Simple Mode
@@ -37,8 +37,10 @@ pnpm dev          # Start development server
 pnpm build        # Build for production
 pnpm lint         # Run ESLint
 pnpm type-check   # Run TypeScript type checking
-pnpm test         # Run tests in watch mode
-pnpm test:run     # Run tests once
+pnpm test         # Run unit tests in watch mode
+pnpm test:run     # Run unit tests once
+pnpm test:e2e     # Run E2E tests (Playwright)
+pnpm test:e2e:ui  # Run E2E tests with interactive UI
 pnpm db:push      # Push schema changes to database
 pnpm db:generate  # Generate migrations
 pnpm db:studio    # Open Drizzle Studio
@@ -68,7 +70,8 @@ Projects are created in `~/Code/apps/<project-name>`.
 - `src/db/` - Database schema and connection (Drizzle)
 - `src/lib/` - Utility functions and email helpers
 - `src/middleware.ts` - Clerk auth middleware
-- `tests/` - Vitest tests
+- `tests/` - Vitest unit tests
+- `e2e/` - Playwright E2E tests (pages, fixtures, visual tests)
 
 ### Templates
 - `templates/simple/` - Override files for simple mode (layout, page, package.json, env)

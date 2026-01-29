@@ -51,22 +51,28 @@ export function CalendarView() {
         const res = await fetch(`/api/calendar/week/${dateStr}`);
         const data = await res.json();
 
+        // Handle empty or missing data
+        const rawDays = data?.days || [];
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const daysWithToday = data.days.map((day: any) => ({
+        const daysWithToday = rawDays.map((day: any) => ({
           ...day,
           workoutName: day.workoutDay || day.workoutName || "Rest",
           isToday: checkIsToday(parseDate(day.date)),
         }));
 
         setDays(daysWithToday);
-        setWeekStart(data.weekStart);
-        setWeekEnd(data.weekEnd);
+        setWeekStart(data?.weekStart || "");
+        setWeekEnd(data?.weekEnd || "");
       } else {
         const res = await fetch(`/api/calendar/${year}/${month}`);
         const data = await res.json();
 
+        // Handle empty or missing data
+        const rawDays = Array.isArray(data) ? data : [];
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const daysWithToday = data.map((day: any) => ({
+        const daysWithToday = rawDays.map((day: any) => ({
           ...day,
           workoutName: day.workoutDay || day.workoutName || "Rest",
           isToday: checkIsToday(parseDate(day.date)),
@@ -76,6 +82,7 @@ export function CalendarView() {
       }
     } catch (error) {
       console.error("Failed to load calendar data:", error);
+      setDays([]);
     } finally {
       setLoading(false);
     }

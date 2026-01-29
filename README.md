@@ -14,7 +14,7 @@ A minimal, production-ready Next.js starter kit. Supports two modes:
 - **Auth:** Clerk
 - **Styling:** Tailwind CSS + shadcn/ui
 - **Email:** Resend
-- **Testing:** Vitest
+- **Testing:** Vitest (unit), Playwright (E2E)
 
 ### Simple Mode
 - **Framework:** Next.js 14+ (App Router)
@@ -110,8 +110,11 @@ Open [http://localhost:3000](http://localhost:3000) to see your app.
 | `pnpm start` | Start production server |
 | `pnpm lint` | Run ESLint |
 | `pnpm type-check` | Run TypeScript type checking |
-| `pnpm test` | Run tests in watch mode |
-| `pnpm test:run` | Run tests once |
+| `pnpm test` | Run unit tests in watch mode |
+| `pnpm test:run` | Run unit tests once |
+| `pnpm test:e2e` | Run E2E tests |
+| `pnpm test:e2e:ui` | Run E2E tests with interactive UI |
+| `pnpm test:e2e:report` | View E2E test report with screenshots |
 | `pnpm db:generate` | Generate database migrations |
 | `pnpm db:migrate` | Run database migrations |
 | `pnpm db:push` | Push schema changes directly (dev) |
@@ -204,30 +207,54 @@ templates/
     └── env.local           # Minimal env template
 ```
 
+## E2E Testing
+
+The project includes Playwright-based E2E tests covering mobile and desktop viewports. Tests verify page functionality and capture screenshots for UI review.
+
+### Running Tests
+
+```bash
+pnpm test:e2e          # Run all E2E tests
+pnpm test:e2e:ui       # Interactive UI mode for debugging
+pnpm test:e2e:report   # View HTML test report with screenshots
+```
+
+### Test Structure
+
+```
+e2e/
+├── fixtures/           # Auth setup and test data seeding
+├── pages/              # Page Object Models
+└── tests/
+    ├── visual/         # Page tests with screenshot capture
+    └── functional/     # User flow tests
+```
+
+### Viewports Tested
+
+- **mobile-chrome**: 393x851 (Pixel 5)
+- **desktop-chrome**: 1280x720
+- **desktop-large**: 1920x1080
+
+### Screenshot Review
+
+After running tests, view the HTML report (`pnpm test:e2e:report`) to see screenshots captured for each page across all viewports. Screenshots are attached to test results for UI review.
+
 ## Future Improvements
 
-The following features and improvements are planned for future development:
-
-### 1. Injury Log Enhancements
-The basic injury log (free-form entries with chronological view) is implemented. Future enhancements:
+### Injury Log Enhancements
 - AI-powered summaries of injury progression
-- Ability to upload supporting documents (MRIs, X-rays, radiology reports)
+- Upload supporting documents (MRIs, X-rays, radiology reports)
 - Search/filter entries
 
-### 2. Habit Tracker Enhancements
-The basic daily habits tracker is implemented with a checklist that resets daily. Future enhancements:
-- Calendar/grid view showing completion history (like GitHub contribution graph)
-- Statistics view (e.g., "18 of last 30 days" for each habit)
-- Habit ordering/reordering
+### Habit Tracker Enhancements
+- Calendar/grid view showing completion history
+- Statistics view (e.g., "18 of last 30 days")
 - Habit streaks and gamification
-- Custom reset time (for night owls)
 
-### 3. Visual Regression Testing
-Build a test framework for capturing and comparing UI screenshots across mobile and desktop viewports:
-- Automated screenshot capture for key pages/components
-- Side-by-side comparison of mobile vs desktop layouts
-- Visual diff detection for UI regressions
-- Integration with CI/CD pipeline
+### Testing Enhancements
+- GitHub Actions CI workflow to run tests on PRs
+- Accessibility testing with `@axe-core/playwright`
 
 ## License
 
