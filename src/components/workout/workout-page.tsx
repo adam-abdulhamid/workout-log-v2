@@ -1,10 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Save, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { BlockCard } from "./block-card";
 import {
   WorkoutData,
@@ -152,6 +161,7 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
   }
 
   const disabled = workout.isCompleted && !isEditing;
+  const hasBlocks = workout.blocks.length > 0;
 
   return (
     <div className="space-y-6">
@@ -201,18 +211,38 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
 
       {/* Blocks */}
       <div className="space-y-4">
-        {workout.blocks.map((block, index) => (
-          <BlockCard
-            key={block.id}
-            block={block}
-            exerciseLogs={exerciseLogs}
-            blockNote={blockNotes[block.id] || ""}
-            onExerciseLogsChange={handleExerciseLogsChange}
-            onBlockNoteChange={handleBlockNoteChange}
-            disabled={disabled}
-            defaultOpen={index === 0}
-          />
-        ))}
+        {hasBlocks ? (
+          workout.blocks.map((block, index) => (
+            <BlockCard
+              key={block.id}
+              block={block}
+              exerciseLogs={exerciseLogs}
+              blockNote={blockNotes[block.id] || ""}
+              onExerciseLogsChange={handleExerciseLogsChange}
+              onBlockNoteChange={handleBlockNoteChange}
+              disabled={disabled}
+              defaultOpen={index === 0}
+            />
+          ))
+        ) : (
+          <Card className="border-dashed bg-muted/10">
+            <CardHeader>
+              <CardTitle>No blocks scheduled</CardTitle>
+              <CardDescription>
+                This day has no training blocks yet. Add blocks or adjust the
+                plan for this date.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              If this is a rest day, you can leave it empty.
+            </CardContent>
+            <CardFooter>
+              <Button asChild variant="outline">
+                <Link href="/manage-days">Manage Days</Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
       </div>
 
       {/* Action Buttons - Fixed at bottom */}
