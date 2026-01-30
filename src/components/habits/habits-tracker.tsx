@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash2, Plus, X } from "lucide-react";
+import { Pencil, Trash2, Plus, Check } from "lucide-react";
 
 type Habit = {
   id: string;
@@ -204,7 +204,7 @@ export function HabitsTracker() {
             >
               {isManaging ? (
                 <>
-                  <X className="h-3 w-3 mr-1" />
+                  <Check className="h-3 w-3 mr-1" />
                   Done
                 </>
               ) : (

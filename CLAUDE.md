@@ -101,7 +101,7 @@ pnpm dlx shadcn@latest add <component-name>
 ```
 
 ### Environment Variables
-Required variables are documented in `.env.example`. Copy to `.env.local` for local development.
+Required variables are documented in `.env.example`. Copy to `.env` for local development.
 
 ## Code Style
 
@@ -115,17 +115,18 @@ Required variables are documented in `.env.example`. Copy to `.env.local` for lo
 Users can submit feedback with screenshots. Query and manage feedback items using the script at `scripts/query-feedback.ts`:
 
 ```bash
-# List all feedback items (descriptions and screenshot info)
-export $(grep -v '^#' .env | xargs) && npx tsx scripts/query-feedback.ts
+# List open feedback items
+npx tsx scripts/query-feedback.ts
 
 # Save screenshots to view them
-export $(grep -v '^#' .env | xargs) && npx tsx scripts/save-feedback-screenshots.ts
+npx tsx scripts/save-feedback-screenshots.ts
+
+# Mark feedback items as fixed
+npx tsx scripts/fix-feedback.ts <id1> [id2] [id3] ...
 ```
 
 Feedback schema (`feedbackEntries` table):
 - `id`, `userId`, `description`, `screenshot` (base64), `url`, `status` (open/fixed/wont_fix), `createdAt`
-
-To update feedback status after fixing, use the API: `PATCH /api/feedback/[id]` with `{ "status": "fixed" }`
 
 ## Future Improvements
 

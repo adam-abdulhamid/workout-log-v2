@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+config({ path: ".env" });
+
 import { neon } from "@neondatabase/serverless";
 
 const USER_ID = "ef4ef366-beb8-4140-b5a1-26335c0d2812";

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Plus, Trash2, Copy, Download, Upload } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Copy, Download, Upload, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,9 +25,141 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { BlockDetail, BLOCK_CATEGORIES, WorkoutExercise } from "@/types/workout";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface BlockEditorProps {
   blockId: string;
+}
+
+interface SortableExerciseRowProps {
+  exercise: WorkoutExercise;
+  index: number;
+  weekNum: number;
+  onUpdate: (
+    weekNum: number,
+    exerciseId: string,
+    field: keyof WorkoutExercise,
+    value: string | number | null
+  ) => void;
+  onRemove: (weekNum: number, exerciseId: string) => void;
+}
+
+function SortableExerciseRow({
+  exercise,
+  index,
+  weekNum,
+  onUpdate,
+  onRemove,
+}: SortableExerciseRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: exercise.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none p-1"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">{index + 1}</TableCell>
+      <TableCell>
+        <Input
+          value={exercise.name}
+          onChange={(e) =>
+            onUpdate(weekNum, exercise.id, "name", e.target.value)
+          }
+          placeholder="Exercise name"
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          type="number"
+          value={exercise.sets ?? ""}
+          onChange={(e) =>
+            onUpdate(
+              weekNum,
+              exercise.id,
+              "sets",
+              e.target.value ? parseInt(e.target.value) : null
+            )
+          }
+          className="w-16"
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          value={exercise.reps ?? ""}
+          onChange={(e) =>
+            onUpdate(weekNum, exercise.id, "reps", e.target.value)
+          }
+          placeholder="8-10"
+          className="w-20"
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          value={exercise.tempo ?? ""}
+          onChange={(e) =>
+            onUpdate(weekNum, exercise.id, "tempo", e.target.value)
+          }
+          placeholder="3010"
+          className="w-20"
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          value={exercise.rest ?? ""}
+          onChange={(e) =>
+            onUpdate(weekNum, exercise.id, "rest", e.target.value)
+          }
+          placeholder="2:00"
+          className="w-24"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive hover:text-destructive"
+          onClick={() => onRemove(weekNum, exercise.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 export function BlockEditor({ blockId }: BlockEditorProps) {
@@ -51,6 +183,34 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
   const [weekExercises, setWeekExercises] = useState<
     Record<number, WorkoutExercise[]>
   >({});
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleExerciseDragEnd(weekNum: number) {
+    return (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (over && active.id !== over.id) {
+        setWeekExercises((prev) => {
+          const exercises = prev[weekNum] || [];
+          const oldIndex = exercises.findIndex((ex) => ex.id === active.id);
+          const newIndex = exercises.findIndex((ex) => ex.id === over.id);
+          const reordered = arrayMove(exercises, oldIndex, newIndex);
+          // Update order field
+          const withUpdatedOrder = reordered.map((ex, idx) => ({
+            ...ex,
+            order: idx + 1,
+          }));
+          return { ...prev, [weekNum]: withUpdatedOrder };
+        });
+      }
+    };
+  }
 
   useEffect(() => {
     loadBlock();
@@ -407,110 +567,43 @@ export function BlockEditor({ blockId }: BlockEditorProps) {
 
                 {/* Exercises table - horizontally scrollable on mobile */}
                 <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                  <Table className="min-w-[640px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead className="min-w-[150px]">Exercise</TableHead>
-                        <TableHead className="w-16">Sets</TableHead>
-                        <TableHead className="w-20">Reps</TableHead>
-                        <TableHead className="w-20">Tempo</TableHead>
-                        <TableHead className="w-24">Rest</TableHead>
-                        <TableHead className="w-10"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(weekExercises[weekNum] || []).map((exercise, index) => (
-                        <TableRow key={exercise.id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>
-                            <Input
-                              value={exercise.name}
-                              onChange={(e) =>
-                                updateExercise(
-                                  weekNum,
-                                  exercise.id,
-                                  "name",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Exercise name"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              value={exercise.sets ?? ""}
-                              onChange={(e) =>
-                                updateExercise(
-                                  weekNum,
-                                  exercise.id,
-                                  "sets",
-                                  e.target.value ? parseInt(e.target.value) : null
-                                )
-                              }
-                              className="w-16"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={exercise.reps ?? ""}
-                              onChange={(e) =>
-                                updateExercise(
-                                  weekNum,
-                                  exercise.id,
-                                  "reps",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="8-10"
-                              className="w-20"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={exercise.tempo ?? ""}
-                              onChange={(e) =>
-                                updateExercise(
-                                  weekNum,
-                                  exercise.id,
-                                  "tempo",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="3010"
-                              className="w-20"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={exercise.rest ?? ""}
-                              onChange={(e) =>
-                                updateExercise(
-                                  weekNum,
-                                  exercise.id,
-                                  "rest",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="2:00"
-                              className="w-24"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => removeExercise(weekNum, exercise.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleExerciseDragEnd(weekNum)}
+                  >
+                    <Table className="min-w-[700px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-10"></TableHead>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead className="min-w-[150px]">Exercise</TableHead>
+                          <TableHead className="w-16">Sets</TableHead>
+                          <TableHead className="w-20">Reps</TableHead>
+                          <TableHead className="w-20">Tempo</TableHead>
+                          <TableHead className="w-24">Rest</TableHead>
+                          <TableHead className="w-10"></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        <SortableContext
+                          items={(weekExercises[weekNum] || []).map((ex) => ex.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {(weekExercises[weekNum] || []).map((exercise, index) => (
+                            <SortableExerciseRow
+                              key={exercise.id}
+                              exercise={exercise}
+                              index={index}
+                              weekNum={weekNum}
+                              onUpdate={updateExercise}
+                              onRemove={removeExercise}
+                            />
+                          ))}
+                        </SortableContext>
+                      </TableBody>
+                    </Table>
+                  </DndContext>
                 </div>
 
                 <Button

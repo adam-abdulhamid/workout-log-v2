@@ -1,7 +1,10 @@
+import { config } from "dotenv";
+config({ path: ".env" });
+
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../src/db/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -22,9 +25,10 @@ async function main() {
       createdAt: schema.feedbackEntries.createdAt,
     })
     .from(schema.feedbackEntries)
+    .where(eq(schema.feedbackEntries.status, "open"))
     .orderBy(desc(schema.feedbackEntries.createdAt));
 
-  console.log("Found " + feedbackItems.length + " feedback entries:\n");
+  console.log("Found " + feedbackItems.length + " open feedback entries:\n");
 
   for (const item of feedbackItems) {
     console.log("─".repeat(60));

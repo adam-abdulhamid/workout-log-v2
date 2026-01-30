@@ -16,6 +16,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DayTemplateDetail, BlockSummary } from "@/types/workout";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const DAY_NAMES = [
   "Monday",
@@ -29,6 +46,60 @@ const DAY_NAMES = [
 
 interface DayEditorProps {
   dayNum: number;
+}
+
+interface SortableBlockProps {
+  block: { id: string; name: string; category: string | null };
+  onRemove: (id: string) => void;
+}
+
+function SortableBlock({ block, onRemove }: SortableBlockProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <div className="flex-1">
+        <span className="font-medium">{block.name}</span>
+        {block.category && (
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {block.category}
+          </Badge>
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-destructive hover:text-destructive"
+        onClick={() => onRemove(block.id)}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 }
 
 export function DayEditor({ dayNum }: DayEditorProps) {
@@ -45,6 +116,25 @@ export function DayEditor({ dayNum }: DayEditorProps) {
   const [assignedBlocks, setAssignedBlocks] = useState<
     Array<{ id: string; name: string; category: string | null }>
   >([]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setAssignedBlocks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
 
   useEffect(() => {
     loadData();
@@ -127,18 +217,6 @@ export function DayEditor({ dayNum }: DayEditorProps) {
 
   function removeBlock(blockId: string) {
     setAssignedBlocks((prev) => prev.filter((b) => b.id !== blockId));
-  }
-
-  function moveBlock(index: number, direction: "up" | "down") {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= assignedBlocks.length) return;
-
-    const newBlocks = [...assignedBlocks];
-    [newBlocks[index], newBlocks[newIndex]] = [
-      newBlocks[newIndex],
-      newBlocks[index],
-    ];
-    setAssignedBlocks(newBlocks);
   }
 
   // Filter available blocks (not already assigned)
@@ -240,50 +318,26 @@ export function DayEditor({ dayNum }: DayEditorProps) {
               No blocks assigned. Add blocks to build this day&apos;s workout.
             </div>
           ) : (
-            <div className="space-y-2">
-              {assignedBlocks.map((block, index) => (
-                <div
-                  key={block.id}
-                  className="flex items-center gap-3 p-3 border border-border rounded-lg"
-                >
-                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                  <div className="flex-1">
-                    <span className="font-medium">{block.name}</span>
-                    {block.category && (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        {block.category}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => moveBlock(index, "up")}
-                      disabled={index === 0}
-                    >
-                      ↑
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => moveBlock(index, "down")}
-                      disabled={index === assignedBlocks.length - 1}
-                    >
-                      ↓
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => removeBlock(block.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={assignedBlocks.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {assignedBlocks.map((block) => (
+                    <SortableBlock
+                      key={block.id}
+                      block={block}
+                      onRemove={removeBlock}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </CardContent>
       </Card>
