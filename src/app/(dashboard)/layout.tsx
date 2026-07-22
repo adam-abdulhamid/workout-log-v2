@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
-import { Calendar, Dumbbell, Blocks, CalendarDays, Settings, LineChart, HeartPulse, CheckSquare, FileText } from "lucide-react";
+import { Calendar, Dumbbell, Blocks, CalendarDays, Settings, LineChart, HeartPulse, CheckSquare, FileText, Timer } from "lucide-react";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -15,6 +15,7 @@ const navigation = [
   { name: "Manage Days", href: "/admin/days", icon: CalendarDays },
   { name: "Block Library", href: "/admin/blocks", icon: Blocks },
   { name: "Weight Tracker", href: "/dashboard/weight-tracker", icon: LineChart },
+  { name: "Stretching", href: "/dashboard/stretching", icon: Timer },
   { name: "Injury Log", href: "/dashboard/injury-log", icon: HeartPulse },
   { name: "Health Docs", href: "/dashboard/health-documents", icon: FileText },
   { name: "Habits", href: "/dashboard/habits", icon: CheckSquare },

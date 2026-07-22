@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { BlockCard } from "./block-card";
+import { StretchTimerBlock } from "./stretch-timer-block";
 import {
   WorkoutData,
   ExerciseLogEntry,
@@ -212,18 +213,22 @@ export function WorkoutPage({ date }: WorkoutPageProps) {
       {/* Blocks */}
       <div className="space-y-4">
         {hasBlocks ? (
-          workout.blocks.map((block, index) => (
-            <BlockCard
-              key={block.id}
-              block={block}
-              exerciseLogs={exerciseLogs}
-              blockNote={blockNotes[block.id] || ""}
-              onExerciseLogsChange={handleExerciseLogsChange}
-              onBlockNoteChange={handleBlockNoteChange}
-              disabled={disabled}
-              defaultOpen={index === 0}
-            />
-          ))
+          workout.blocks.map((block, index) =>
+            block.category === "stretching" ? (
+              <StretchTimerBlock key={block.id} date={date} title={block.name} />
+            ) : (
+              <BlockCard
+                key={block.id}
+                block={block}
+                exerciseLogs={exerciseLogs}
+                blockNote={blockNotes[block.id] || ""}
+                onExerciseLogsChange={handleExerciseLogsChange}
+                onBlockNoteChange={handleBlockNoteChange}
+                disabled={disabled}
+                defaultOpen={index === 0}
+              />
+            )
+          )
         ) : (
           <Card className="border-dashed bg-muted/10">
             <CardHeader>

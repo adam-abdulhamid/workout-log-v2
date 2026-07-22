@@ -38,6 +38,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   habits: many(habits),
   habitCompletions: many(habitCompletions),
   healthDocuments: many(healthDocuments),
+  stretchTimeEntries: many(stretchTimeEntries),
 }));
 
 // ============================================================================
@@ -409,6 +410,43 @@ export const habitCompletionsRelations = relations(
 );
 
 // ============================================================================
+// STRETCH TIME ENTRIES (Per-stretch daily cumulative totals)
+// ============================================================================
+
+export const stretchTimeEntries = pgTable(
+  "stretch_time_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    stretchId: text("stretch_id").notNull(),
+    durationSeconds: integer("duration_seconds").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("unique_stretch_time_user_date_stretch").on(
+      table.userId,
+      table.date,
+      table.stretchId
+    ),
+    index("idx_stretch_time_user_date").on(table.userId, table.date),
+  ]
+);
+
+export const stretchTimeEntriesRelations = relations(
+  stretchTimeEntries,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [stretchTimeEntries.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+// ============================================================================
 // EXERCISE LOGS (Individual set performance)
 // ============================================================================
 
@@ -555,3 +593,6 @@ export type NewHabitCompletion = typeof habitCompletions.$inferInsert;
 
 export type HealthDocument = typeof healthDocuments.$inferSelect;
 export type NewHealthDocument = typeof healthDocuments.$inferInsert;
+
+export type StretchTimeEntry = typeof stretchTimeEntries.$inferSelect;
+export type NewStretchTimeEntry = typeof stretchTimeEntries.$inferInsert;

@@ -227,6 +227,7 @@ export const BLOCK_CATEGORIES = [
   "rehabilitation",
   "power",
   "accessory",
+  "stretching",
 ] as const;
 
 export type BlockCategory = (typeof BLOCK_CATEGORIES)[number];

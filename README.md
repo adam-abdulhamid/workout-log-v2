@@ -179,6 +179,33 @@ Or use Docker Compose:
 docker-compose up
 ```
 
+## Production Deployment
+
+Pushes to `main` trigger `.github/workflows/deploy.yml`. GitHub Actions builds the Docker image, publishes `ghcr.io/adam-abdulhamid/workout-log-v2:latest`, connects to the VPS, pulls the image, and restarts the Compose service behind Traefik.
+
+Database migrations and personalized workout data are intentionally separate from the image deployment. For the workout overhaul:
+
+```bash
+# Use the production DATABASE_URL for both commands.
+pnpm db:migrate
+npx tsx scripts/apply-workout-overhaul.ts --email you@example.com --dry-run
+npx tsx scripts/apply-workout-overhaul.ts --email you@example.com
+```
+
+The installer targets exactly one existing account, replaces that account's seven day-template assignments, and writes the same exercise prescriptions to Weeks 1–6. It is safe to preview with `--dry-run` and safe to rerun.
+
+Before pushing:
+
+```bash
+pnpm lint
+pnpm type-check
+pnpm test:run
+pnpm build
+pnpm test:e2e
+```
+
+After merging or pushing to `main`, verify the **Build and Deploy** workflow in GitHub Actions, then confirm the container is healthy and the Stretching page loads against the migrated production database.
+
 ## Project Structure
 
 ```

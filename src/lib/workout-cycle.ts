@@ -3,7 +3,7 @@
  *
  * Core business logic for determining workout schedules based on a 7-week training cycle.
  * - Weeks 1-6: Normal training with progressive overload
- * - Week 7: Deload week (uses Week 6 exercise prescriptions at reduced intensity)
+ * - Week 7: Deload-labelled week (uses Week 6 prescriptions unchanged)
  */
 
 // Cycle start date: Monday, January 12, 2026
