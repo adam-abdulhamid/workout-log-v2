@@ -116,7 +116,7 @@ Open [http://localhost:3000](http://localhost:3000) to see your app.
 | `pnpm test:e2e:ui` | Run E2E tests with interactive UI |
 | `pnpm test:e2e:report` | View E2E test report with screenshots |
 | `pnpm db:generate` | Generate database migrations |
-| `pnpm db:migrate` | Run database migrations |
+| `pnpm db:migrate` | Run tracked migrations (not currently safe in production; see runbook) |
 | `pnpm db:push` | Push schema changes directly (dev) |
 | `pnpm db:studio` | Open Drizzle Studio GUI |
 
@@ -146,16 +146,20 @@ pnpm db:push
 ```
 Pushes schema changes directly to the database. Fast iteration, no migration files.
 
-**For production** (track changes with migrations):
+**For production**, generate and review migration files, then follow the
+[Production Deployment Runbook](docs/deployment.md). The current production
+migration ledger is not baselined, so the generic `pnpm db:migrate` command is
+not safe there yet.
+
 ```bash
-pnpm db:generate  # Generate migration from schema changes
-pnpm db:migrate   # Apply migrations to database
+pnpm db:generate
 ```
 
 ### Schema Location
 
 Database schema is defined in `src/db/schema.ts`. After modifying the schema:
-1. Run `pnpm db:push` (dev) or `pnpm db:generate` + `pnpm db:migrate` (prod)
+1. Use `pnpm db:push` only for development, or generate a reviewed migration
+   for production and follow the deployment runbook.
 2. TypeScript types are automatically inferred from the schema
 
 ## Docker
@@ -181,30 +185,16 @@ docker-compose up
 
 ## Production Deployment
 
-Pushes to `main` trigger `.github/workflows/deploy.yml`. GitHub Actions builds the Docker image, publishes `ghcr.io/adam-abdulhamid/workout-log-v2:latest`, connects to the VPS, pulls the image, and restarts the Compose service behind Traefik.
+See the authoritative [Production Deployment Runbook](docs/deployment.md).
 
-Database migrations and personalized workout data are intentionally separate from the image deployment. For the workout overhaul:
+In short, merging a PR into `main` triggers `.github/workflows/deploy.yml`,
+which builds the Docker image, publishes it to GHCR, and restarts the VPS
+Compose service behind Traefik.
 
-```bash
-# Use the production DATABASE_URL for both commands.
-pnpm db:migrate
-npx tsx scripts/apply-workout-overhaul.ts --email you@example.com --dry-run
-npx tsx scripts/apply-workout-overhaul.ts --email you@example.com
-```
-
-The installer targets exactly one existing account, replaces that account's seven day-template assignments, and writes the same exercise prescriptions to Weeks 1–6. It is safe to preview with `--dry-run` and safe to rerun.
-
-Before pushing:
-
-```bash
-pnpm lint
-pnpm type-check
-pnpm test:run
-pnpm build
-pnpm test:e2e
-```
-
-After merging or pushing to `main`, verify the **Build and Deploy** workflow in GitHub Actions, then confirm the container is healthy and the Stretching page loads against the migrated production database.
+Database migrations and account-specific data updates are separate operations.
+The production Drizzle migration ledger is not currently baselined, so **do not
+run `pnpm db:migrate` or `pnpm db:push` against production**. Follow the
+runbook's schema-release procedure instead.
 
 ## Project Structure
 

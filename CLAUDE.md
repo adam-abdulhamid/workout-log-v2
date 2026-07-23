@@ -41,7 +41,7 @@ pnpm test         # Run unit tests in watch mode
 pnpm test:run     # Run unit tests once
 pnpm test:e2e     # Run E2E tests (Playwright)
 pnpm test:e2e:ui  # Run E2E tests with interactive UI
-pnpm db:push      # Push schema changes to database
+pnpm db:push      # Push schema changes in development only
 pnpm db:generate  # Generate migrations
 pnpm db:studio    # Open Drizzle Studio
 ```
@@ -132,82 +132,13 @@ Feedback schema (`feedbackEntries` table):
 
 When finishing a task or set of tasks, check the **Future Improvements** section in `README.md` and ask the user if any of those items should be implemented next.
 
-## Deployment (VPS with Traefik)
+## Deployment
 
-### One-time Traefik Setup
+Use [`docs/deployment.md`](docs/deployment.md) as the single authoritative
+production runbook.
 
-On your VPS, create `~/traefik/docker-compose.yml`:
-```yaml
-services:
-  traefik:
-    image: traefik:v2.11
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./acme.json:/acme.json
-    networks:
-      - traefik-public
-
-networks:
-  traefik-public:
-    name: traefik-public
-```
-
-Create `~/traefik/traefik.yml`:
-```yaml
-entryPoints:
-  web:
-    address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-  websecure:
-    address: ":443"
-
-providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    exposedByDefault: false
-    network: traefik-public
-
-certificatesResolvers:
-  letsencrypt:
-    acme:
-      email: your-email@example.com
-      storage: /acme.json
-      httpChallenge:
-        entryPoint: web
-```
-
-Create empty acme.json with correct permissions:
-```bash
-touch ~/traefik/acme.json && chmod 600 ~/traefik/acme.json
-```
-
-Start Traefik:
-```bash
-cd ~/traefik && docker compose up -d
-```
-
-### Deploying an App
-
-1. Update `docker-compose.yml`: replace `YOUR_APP_NAME` and `your.domain.com`
-2. Create `.env` on VPS with production environment variables
-3. Clone/copy repo to VPS (e.g., `~/apps/your-app`)
-4. Build and run:
-```bash
-cd ~/apps/your-app && docker compose up -d --build
-```
-
-### Verification
-```bash
-docker ps                                    # Check containers running
-docker logs <container-name>                 # Check app logs
-docker network inspect traefik-public        # Verify network connectivity
-```
+- Merging or pushing to `main` triggers the GitHub Actions deployment.
+- Do not build directly on the VPS during a normal release.
+- Database migrations and account-specific installers are separate operations.
+- The production Drizzle migration ledger is not currently baselined, so do
+  not run `pnpm db:migrate` or `pnpm db:push` against production.
